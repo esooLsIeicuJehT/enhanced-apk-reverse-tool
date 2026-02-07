@@ -54,19 +54,56 @@ A comprehensive, enhanced version of the popular `apk.sh` tool with advanced rev
 
 ## 📋 Requirements
 
+### Supported Platforms
+- ✅ **Linux**: Debian/Ubuntu (APT), Fedora/RHEL (DNF), Arch Linux (Pacman)
+- ✅ **macOS**: macOS 10.14+ with Homebrew
+- ✅ **Windows**: Windows 10/11 (native PowerShell or WSL)
+- ✅ **Windows WSL**: Windows Subsystem for Linux (Ubuntu, Fedora, etc.)
+
 ### System Requirements
-- Linux (Ubuntu/Debian recommended)
 - Java 11 or higher
 - Python 3.7+
 - 2GB+ RAM
 - 1GB+ disk space
+- Internet connection for downloading dependencies
 
 ### Automatic Installation
-Use the included installation script to install all dependencies:
 
+#### Linux (Debian/Ubuntu)
 ```bash
-# Run as root or with sudo
 sudo ./install-dependencies.sh
+```
+
+#### Linux (Fedora/RHEL)
+```bash
+sudo ./install-dependencies.sh
+# The script automatically detects your distribution and uses DNF
+```
+
+#### Linux (Arch Linux)
+```bash
+sudo ./install-dependencies.sh
+# The script automatically detects your distribution and uses Pacman
+```
+
+#### macOS
+```bash
+# Ensure you have Homebrew installed
+sudo ./install-dependencies.sh
+# The script automatically detects macOS and uses Homebrew
+```
+
+#### Windows (Native PowerShell)
+```powershell
+# Run PowerShell as Administrator
+.\install-dependencies-windows.ps1
+```
+
+#### Windows (WSL)
+```bash
+# In WSL terminal (Ubuntu, Fedora, etc.)
+sudo ./install-dependencies.sh
+# The script automatically detects WSL environment
 ```
 
 ### Manual Dependencies
@@ -74,7 +111,7 @@ If you prefer manual installation, ensure you have:
 
 #### Core Tools
 - `wget`, `curl`, `unzip`, `zip`
-- `openjdk-11-jdk`
+- `openjdk-11-jdk` (Debian/Ubuntu) or `java-11-openjdk-devel` (Fedora/RHEL)
 - `python3`, `pip3`
 - `jq` (for JSON processing)
 
@@ -92,16 +129,28 @@ If you prefer manual installation, ensure you have:
 ## 🚀 Quick Start
 
 ### 1. Installation
+
+#### Linux/macOS/WSL
 ```bash
 # Clone or download the tool
-git clone <repository-url>
-cd apk-reverse-tool
+git clone https://github.com/esooLsIeicuJehT/enhanced-apk-reverse-tool.git
+cd enhanced-apk-reverse-tool
 
 # Make executable
 chmod +x apk-reverse-tool.sh
 
-# Install dependencies (recommended)
+# Install dependencies (detects your OS automatically)
 sudo ./install-dependencies.sh
+```
+
+#### Windows (Native PowerShell)
+```powershell
+# Clone or download the tool
+git clone https://github.com/esooLsIeicuJehT/enhanced-apk-reverse-tool.git
+cd enhanced-apk-reverse-tool
+
+# Run PowerShell installer as Administrator
+.\install-dependencies-windows.ps1
 ```
 
 ### 2. Basic Usage

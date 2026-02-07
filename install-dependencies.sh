@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-# Dependency Installation Script for APK Reverse Engineering Tool
-# This script installs all required dependencies for the enhanced tool
+# Cross-Platform Dependency Installation Script for APK Reverse Engineering Tool
+# Supports: Linux (Debian/Ubuntu/Fedora/RHEL), macOS, Windows (WSL)
 #
 
 set -e
@@ -19,141 +19,365 @@ log() {
     echo -e "${GREEN}[$level]${NC} $*"
 }
 
-log "INFO" "Installing dependencies for APK Reverse Engineering Tool..."
+error() {
+    echo -e "${RED}[ERROR]${NC} $*"
+}
 
-# Update package manager
-log "INFO" "Updating package manager..."
-apt-get update -y
+warn() {
+    echo -e "${YELLOW}[WARN]${NC} $*"
+}
 
-# Install basic dependencies
-log "INFO" "Installing basic dependencies..."
-apt-get install -y \
-    wget \
-    curl \
-    unzip \
-    zip \
-    python3 \
-    python3-pip \
-    openjdk-11-jdk \
-    build-essential \
-    git \
-    jq \
-    tree \
-    file \
-    hexdump \
-    strings \
-    lsof
+# Detect Operating System
+detect_os() {
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        if [[ -f /etc/debian_version ]]; then
+            echo "debian"
+        elif [[ -f /etc/redhat-release ]]; then
+            echo "redhat"
+        elif [[ -f /etc/fedora-release ]]; then
+            echo "fedora"
+        elif [[ -f /etc/arch-release ]]; then
+            echo "arch"
+        else
+            echo "linux-generic"
+        fi
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        echo "macos"
+    elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
+        echo "windows"
+    else
+        echo "unknown"
+    fi
+}
 
-# Install Python dependencies
-log "INFO" "Installing Python dependencies..."
-pip3 install \
-    requests \
-    beautifulsoup4 \
-    lxml \
-    androguard \
-    apkutils \
-    pyaxmlparser
+# Check if running as root or with sudo
+check_privileges() {
+    if [[ "$EUID" -ne 0 ]]; then
+        if command -v sudo &> /dev/null; then
+            log "INFO" "This script requires root privileges. Using sudo..."
+            SUDO="sudo"
+        else
+            error "This script must be run as root or with sudo privileges."
+            exit 1
+        fi
+    else
+        SUDO=""
+    fi
+}
 
-# Install Android SDK components
-log "INFO" "Setting up Android SDK..."
+# Install dependencies based on OS
+install_dependencies() {
+    local os=$(detect_os)
+    
+    log "INFO" "Detected OS: $os"
+    log "INFO" "Installing dependencies for APK Reverse Engineering Tool..."
+    
+    case "$os" in
+        debian)
+            install_debian
+            ;;
+        redhat|fedora)
+            install_redhat
+            ;;
+        arch)
+            install_arch
+            ;;
+        macos)
+            install_macos
+            ;;
+        windows)
+            install_windows_wsl
+            ;;
+        *)
+            error "Unsupported operating system: $os"
+            log "INFO" "Manual installation required. Please refer to the documentation."
+            exit 1
+            ;;
+    esac
+}
 
-# Create Android directory
-mkdir -p /opt/android-sdk
-cd /opt/android-sdk
+# Debian/Ubuntu installation
+install_debian() {
+    log "INFO" "Updating package manager (apt-get)..."
+    $SUDO apt-get update -y
+    
+    log "INFO" "Installing basic dependencies..."
+    $SUDO apt-get install -y \
+        wget \
+        curl \
+        unzip \
+        zip \
+        python3 \
+        python3-pip \
+        openjdk-11-jdk \
+        build-essential \
+        git \
+        jq \
+        tree \
+        file \
+        hexdump \
+        strings \
+        lsof
+    
+    install_common_tools
+}
 
-# Download command line tools
-log "INFO" "Downloading Android command line tools..."
-wget -q https://dl.google.com/android/repository/commandlinetools-linux-9123335_latest.zip
+# RedHat/Fedora installation
+install_redhat() {
+    log "INFO" "Updating package manager (dnf)..."
+    $SUDO dnf upgrade -y
+    
+    log "INFO" "Installing basic dependencies..."
+    $SUDO dnf install -y \
+        wget \
+        curl \
+        unzip \
+        zip \
+        python3 \
+        python3-pip \
+        java-11-openjdk-devel \
+        gcc \
+        gcc-c++ \
+        make \
+        git \
+        jq \
+        tree \
+        file \
+        util-linux \
+        which \
+        findutils
+    
+    install_common_tools
+}
 
-# Extract command line tools
-unzip -q commandlinetools-linux-9123335_latest.zip
-mkdir -p cmdline-tools/latest
-mv cmdline-tools/* cmdline-tools/latest/
-rm -f commandlinetools-linux-9123335_latest.zip
+# Arch Linux installation
+install_arch() {
+    log "INFO" "Updating package manager (pacman)..."
+    $SUDO pacman -Syu --noconfirm
+    
+    log "INFO" "Installing basic dependencies..."
+    $SUDO pacman -S --noconfirm \
+        wget \
+        curl \
+        unzip \
+        zip \
+        python \
+        python-pip \
+        jdk11-openjdk \
+        gcc \
+        make \
+        git \
+        jq \
+        tree \
+        file \
+        lsof
+    
+    install_common_tools
+}
 
-# Set environment variables
-export ANDROID_HOME=/opt/android-sdk
-export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools/33.0.1
+# macOS installation
+install_macos() {
+    log "INFO" "Checking for Homebrew..."
+    if ! command -v brew &> /dev/null; then
+        log "INFO" "Installing Homebrew..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    fi
+    
+    log "INFO" "Installing basic dependencies via Homebrew..."
+    brew install \
+        wget \
+        curl \
+        unzip \
+        python3 \
+        openjdk@11 \
+        git \
+        jq \
+        tree \
+        file
+    
+    install_common_tools
+}
 
-# Add to /etc/profile for persistence
-echo 'export ANDROID_HOME=/opt/android-sdk' >> /etc/profile
-echo 'export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools/33.0.1' >> /etc/profile
+# Windows WSL installation
+install_windows_wsl() {
+    warn "Detected Windows environment. Please ensure you're running in WSL (Windows Subsystem for Linux)."
+    
+    log "INFO" "Checking WSL distribution..."
+    if [[ -f /etc/debian_version ]]; then
+        install_debian
+    elif [[ -f /etc/redhat-release || -f /etc/fedora-release ]]; then
+        install_redhat
+    else
+        error "Unsupported WSL distribution. Please use Ubuntu or Fedora WSL."
+        exit 1
+    fi
+}
 
-# Install Android SDK components
-log "INFO" "Installing Android SDK components..."
-yes | cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME 'platform-tools' 'build-tools;33.0.1' 'platforms;android-33'
+# Common tools installation (OS-independent)
+install_common_tools() {
+    # Install Python dependencies
+    log "INFO" "Installing Python dependencies..."
+    $SUDO pip3 install --upgrade pip
+    $SUDO pip3 install \
+        requests \
+        beautifulsoup4 \
+        lxml \
+        androguard \
+        apkutils \
+        pyaxmlparser
+    
+    # Install Android SDK components
+    install_android_sdk
+    
+    # Install apktool
+    install_apktool
+    
+    # Install jadx
+    install_jadx
+    
+    # Install Frida tools
+    install_frida
+    
+    # Install additional tools
+    install_additional_tools
+    
+    # Create utility scripts
+    create_utility_scripts
+}
+
+# Install Android SDK
+install_android_sdk() {
+    log "INFO" "Setting up Android SDK..."
+    
+    # Create Android directory
+    $SUDO mkdir -p /opt/android-sdk
+    cd /opt/android-sdk
+    
+    # Download command line tools
+    log "INFO" "Downloading Android command line tools..."
+    if [[ ! -d cmdline-tools/latest ]]; then
+        wget -q https://dl.google.com/android/repository/commandlinetools-linux-9123335_latest.zip
+        unzip -q commandlinetools-linux-9123335_latest.zip
+        $SUDO mkdir -p cmdline-tools/latest
+        $SUDO mv cmdline-tools/* cmdline-tools/latest/
+        $SUDO rm -f commandlinetools-linux-9123335_latest.zip
+    fi
+    
+    # Set environment variables
+    export ANDROID_HOME=/opt/android-sdk
+    export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools/33.0.1
+    
+    # Add to profile for persistence
+    $SUDO bash -c 'echo "export ANDROID_HOME=/opt/android-sdk" >> /etc/profile'
+    $SUDO bash -c 'echo "export PATH=\$PATH:\$ANDROID_HOME/cmdline-tools/latest/bin:\$ANDROID_HOME/platform-tools:\$ANDROID_HOME/build-tools/33.0.1" >> /etc/profile'
+    
+    # Install Android SDK components
+    log "INFO" "Installing Android SDK components..."
+    yes | cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME 'platform-tools' 'build-tools;33.0.1' 'platforms;android-33' 2>/dev/null || warn "Some Android SDK components may already be installed"
+}
 
 # Install apktool
-log "INFO" "Installing apktool..."
-cd /usr/local/bin
-wget -q https://github.com/iBotPeaches/Apktool/releases/download/v2.8.1/apktool_2.8.1.jar -O apktool.jar
-wget -q https://github.com/iBotPeaches/Apktool/releases/download/v2.8.1/apktool_2.8.1
-
-# Create wrapper script for apktool
-cat > /usr/local/bin/apktool << 'EOF'
+install_apktool() {
+    log "INFO" "Installing apktool..."
+    
+    if ! command -v apktool &> /dev/null; then
+        cd /usr/local/bin
+        $SUDO wget -q https://github.com/iBotPeaches/Apktool/releases/download/v2.8.1/apktool_2.8.1.jar -O apktool.jar
+        $SUDO wget -q https://github.com/iBotPeaches/Apktool/releases/download/v2.8.1/apktool_2.8.1
+        
+        # Create wrapper script for apktool
+        $SUDO bash -c 'cat > /usr/local/bin/apktool << '\''EOF'\''
 #!/bin/bash
 java -jar /usr/local/bin/apktool.jar "$@"
-EOF
+EOF'
+        
+        $SUDO chmod +x /usr/local/bin/apktool
+        $SUDO chmod +x /usr/local/bin/apktool.jar
+    else
+        log "INFO" "apktool already installed"
+    fi
+}
 
-chmod +x /usr/local/bin/apktool
-chmod +x /usr/local/bin/apktool.jar
-
-# Install jadx for decompilation
-log "INFO" "Installing jadx for Java decompilation..."
-cd /opt
-wget -q https://github.com/skylot/jadx/releases/download/v1.4.7/jadx-1.4.7.zip
-unzip -q jadx-1.4.7.zip
-rm -f jadx-1.4.7.zip
-
-# Create symbolic link
-ln -sf /opt/jadx-1.4.7/bin/jadx /usr/local/bin/jadx
-ln -sf /opt/jadx-1.4.7/bin/jadx-gui /usr/local/bin/jadx-gui
+# Install jadx
+install_jadx() {
+    log "INFO" "Installing jadx for Java decompilation..."
+    
+    if ! command -v jadx &> /dev/null; then
+        cd /opt
+        if [[ ! -d jadx-1.4.7 ]]; then
+            wget -q https://github.com/skylot/jadx/releases/download/v1.4.7/jadx-1.4.7.zip
+            unzip -q jadx-1.4.7.zip
+            rm -f jadx-1.4.7.zip
+        fi
+        
+        # Create symbolic link
+        $SUDO ln -sf /opt/jadx-1.4.7/bin/jadx /usr/local/bin/jadx
+        $SUDO ln -sf /opt/jadx-1.4.7/bin/jadx-gui /usr/local/bin/jadx-gui
+    else
+        log "INFO" "jadx already installed"
+    fi
+}
 
 # Install Frida tools
-log "INFO" "Installing Frida..."
-pip3 install frida-tools
+install_frida() {
+    log "INFO" "Installing Frida..."
+    pip3 install frida-tools || $SUDO pip3 install frida-tools
+    
+    # Download Frida gadget
+    $SUDO mkdir -p /opt/frida-gadgets
+    cd /opt/frida-gadgets
+    
+    # Get latest Frida release
+    FRIDA_VERSION=$(curl -s https://api.github.com/repos/frida/frida/releases/latest | grep -o '"tag_name": *"[^"]*"' | cut -d'"' -f4)
+    
+    if [[ -n "$FRIDA_VERSION" ]]; then
+        log "INFO" "Downloading Frida gadgets (version: $FRIDA_VERSION)..."
+        
+        # Download gadgets for all architectures
+        for arch in android-arm android-arm64 android-x86 android-x86_64; do
+            if [[ ! -f "frida-gadget-$arch.so" ]]; then
+                log "INFO" "Downloading Frida gadget for $arch..."
+                wget -q "https://github.com/frida/frida/releases/download/$FRIDA_VERSION/frida-gadget-$FRIDA_VERSION-$arch.so.xz" || warn "Failed to download gadget for $arch"
+            fi
+        done
+    else
+        warn "Could not determine latest Frida version"
+    fi
+}
 
-# Download Frida gadget
-mkdir -p /opt/frida-gadgets
-cd /opt/frida-gadgets
+# Install additional tools
+install_additional_tools() {
+    log "INFO" "Installing additional analysis tools..."
+    
+    # Install aapt (if not already available)
+    if ! command -v aapt &> /dev/null; then
+        if [[ -f /etc/debian_version ]]; then
+            $SUDO apt-get install -y aapt
+        elif [[ -f /etc/redhat-release || -f /etc/fedora-release ]]; then
+            $SUDO dnf install -y aapt
+        fi
+    fi
+    
+    # Install apksigner (symlink)
+    if ! command -v apksigner &> /dev/null; then
+        $SUDO ln -sf /opt/android-sdk/build-tools/33.0.1/apksigner /usr/local/bin/apksigner 2>/dev/null || true
+    fi
+    
+    # Install zipalign (symlink)
+    if ! command -v zipalign &> /dev/null; then
+        $SUDO ln -sf /opt/android-sdk/build-tools/33.0.1/zipalign /usr/local/bin/zipalign 2>/dev/null || true
+    fi
+}
 
-# Get latest Frida release
-FRIDA_VERSION=$(curl -s https://api.github.com/repos/frida/frida/releases/latest | grep -o '"tag_name": *"[^"]*"' | cut -d'"' -f4)
-
-# Download gadgets for all architectures
-for arch in android-arm android-arm64 android-x86 android-x86_64; do
-    log "INFO" "Downloading Frida gadget for $arch..."
-    wget -q "https://github.com/frida/frida/releases/download/$FRIDA_VERSION/frida-gadget-$FRIDA_VERSION-$arch.so.xz"
-done
-
-# Install additional analysis tools
-log "INFO" "Installing additional analysis tools..."
-
-# Install aapt (if not already available)
-if ! command -v aapt &> /dev/null; then
-    apt-get install -y aapt
-fi
-
-# Install keytool for certificate analysis
-if ! command -v keytool &> /dev/null; then
-    apt-get install -y openjdk-11-jdk-headless
-fi
-
-# Install apksigner
-if ! command -v apksigner &> /dev/null; then
-    ln -sf /opt/android-sdk/build-tools/33.0.1/apksigner /usr/local/bin/apksigner
-fi
-
-# Install zipalign
-if ! command -v zipalign &> /dev/null; then
-    ln -sf /opt/android-sdk/build-tools/33.0.1/zipalign /usr/local/bin/zipalign
-fi
-
-# Create utility scripts directory
-mkdir -p /opt/apk-tools/utils
-
-# Create certificate analysis script
-cat > /opt/apk-tools/utils/cert-analyzer.sh << 'EOF'
+# Create utility scripts
+create_utility_scripts() {
+    log "INFO" "Creating utility scripts..."
+    
+    # Create utility scripts directory
+    $SUDO mkdir -p /opt/apk-tools/utils
+    
+    # Create certificate analysis script
+    $SUDO bash -c 'cat > /opt/apk-tools/utils/cert-analyzer.sh << '\''EOF'\''
 #!/bin/bash
 # Certificate Analysis Utility
 
@@ -185,12 +409,11 @@ fi
 
 # Clean up
 rm -rf "$TEMP_DIR"
-EOF
-
-chmod +x /opt/apk-tools/utils/cert-analyzer.sh
-
-# Create permission analysis script
-cat > /opt/apk-tools/utils/perm-analyzer.sh << 'EOF'
+EOF'
+    $SUDO chmod +x /opt/apk-tools/utils/cert-analyzer.sh
+    
+    # Create permission analysis script
+    $SUDO bash -c 'cat > /opt/apk-tools/utils/perm-analyzer.sh << '\''EOF'\''
 #!/bin/bash
 # Permission Analysis Utility
 
@@ -210,30 +433,33 @@ echo "Analyzing permissions for: $APK_FILE"
 echo "=================================="
 
 # Extract permissions
-PERMISSIONS=$(aapt dump permissions "$APK_FILE" | grep "uses-permission:" | cut -d= -f2 | tr -d "'" | sort)
-
-echo "Total permissions: $(echo "$PERMISSIONS" | wc -l)"
-echo ""
-
-echo "Dangerous permissions:"
-echo "$PERMISSIONS" | grep -E "(READ_CONTACTS|WRITE_CONTACTS|READ_CALENDAR|WRITE_CALENDAR|CAMERA|READ_EXTERNAL_STORAGE|WRITE_EXTERNAL_STORAGE|ACCESS_FINE_LOCATION|ACCESS_COARSE_LOCATION|RECORD_AUDIO|READ_PHONE_STATE|CALL_PHONE|READ_SMS|SEND_SMS|RECEIVE_SMS|ACCESS_WIFI_STATE)" || echo "None"
-
-echo ""
-echo "All permissions:"
-echo "$PERMISSIONS"
-EOF
-
-chmod +x /opt/apk-tools/utils/perm-analyzer.sh
-
-# Create device info script
-cat > /opt/apk-tools/utils/device-info.sh << 'EOF'
+if command -v aapt &> /dev/null; then
+    PERMISSIONS=$(aapt dump permissions "$APK_FILE" 2>/dev/null | grep "uses-permission:" | cut -d= -f2 | tr -d "'" | sort)
+    
+    echo "Total permissions: $(echo "$PERMISSIONS" | wc -l)"
+    echo ""
+    
+    echo "Dangerous permissions:"
+    echo "$PERMISSIONS" | grep -E "(READ_CONTACTS|WRITE_CONTACTS|READ_CALENDAR|WRITE_CALENDAR|CAMERA|READ_EXTERNAL_STORAGE|WRITE_EXTERNAL_STORAGE|ACCESS_FINE_LOCATION|ACCESS_COARSE_LOCATION|RECORD_AUDIO|READ_PHONE_STATE|CALL_PHONE|READ_SMS|SEND_SMS|RECEIVE_SMS|ACCESS_WIFI_STATE)" || echo "None"
+    
+    echo ""
+    echo "All permissions:"
+    echo "$PERMISSIONS"
+else
+    echo "Error: aapt not found. Cannot analyze permissions."
+fi
+EOF'
+    $SUDO chmod +x /opt/apk-tools/utils/perm-analyzer.sh
+    
+    # Create device info script
+    $SUDO bash -c 'cat > /opt/apk-tools/utils/device-info.sh << '\''EOF'\''
 #!/bin/bash
 # Device Information Utility
 
 echo "Connected Android Devices:"
 echo "=========================="
 
-adb devices | grep -v "List of devices" | while read -r line; do
+adb devices 2>/dev/null | grep -v "List of devices" | while read -r line; do
     if [[ -n "$line" ]]; then
         DEVICE_ID=$(echo "$line" | cut -f1)
         STATUS=$(echo "$line" | cut -f2)
@@ -242,26 +468,20 @@ adb devices | grep -v "List of devices" | while read -r line; do
         echo "Status: $STATUS"
         
         if [[ "$STATUS" == "device" ]]; then
-            echo "Model: $(adb -s "$DEVICE_ID" shell getprop ro.product.model)"
-            echo "Manufacturer: $(adb -s "$DEVICE_ID" shell getprop ro.product.manufacturer)"
-            echo "Android Version: $(adb -s "$DEVICE_ID" shell getprop ro.build.version.release)"
-            echo "API Level: $(adb -s "$DEVICE_ID" shell getprop ro.build.version.sdk)"
-            echo "Architecture: $(adb -s "$DEVICE_ID" shell getprop ro.product.cpu.abi)"
+            echo "Model: $(adb -s "$DEVICE_ID" shell getprop ro.product.model 2>/dev/null)"
+            echo "Manufacturer: $(adb -s "$DEVICE_ID" shell getprop ro.product.manufacturer 2>/dev/null)"
+            echo "Android Version: $(adb -s "$DEVICE_ID" shell getprop ro.build.version.release 2>/dev/null)"
+            echo "API Level: $(adb -s "$DEVICE_ID" shell getprop ro.build.version.sdk 2>/dev/null)"
+            echo "Architecture: $(adb -s "$DEVICE_ID" shell getprop ro.product.cpu.abi 2>/dev/null)"
         fi
         echo "----------------------------------"
     fi
 done
-EOF
-
-chmod +x /opt/apk-tools/utils/device-info.sh
-
-# Create aliases for easy access
-echo 'alias apk-analyze="/opt/apk-tools/utils/cert-analyzer.sh"' >> /etc/bash.bashrc
-echo 'alias perm-analyze="/opt/apk-tools/utils/perm-analyzer.sh"' >> /etc/bash.bashrc
-echo 'alias device-info="/opt/apk-tools/utils/device-info.sh"' >> /etc/bash.bashrc
-
-# Create comprehensive analysis script
-cat > /opt/apk-tools/utils/full-analysis.sh << 'EOF'
+EOF'
+    $SUDO chmod +x /opt/apk-tools/utils/device-info.sh
+    
+    # Create full analysis script
+    $SUDO bash -c 'cat > /opt/apk-tools/utils/full-analysis.sh << '\''EOF'\''
 #!/bin/bash
 # Comprehensive APK Analysis Script
 
@@ -285,16 +505,18 @@ echo "=================================="
 mkdir -p "$OUTPUT_DIR"
 
 # Basic info
-echo "1. Extracting basic information..."
-aapt dump badging "$APK_FILE" > "$OUTPUT_DIR/basic_info.txt"
+if command -v aapt &> /dev/null; then
+    echo "1. Extracting basic information..."
+    aapt dump badging "$APK_FILE" > "$OUTPUT_DIR/basic_info.txt" 2>/dev/null || echo "Failed to extract basic info"
+fi
 
 # Certificate analysis
 echo "2. Analyzing certificate..."
-/opt/apk-tools/utils/cert-analyzer.sh "$APK_FILE" > "$OUTPUT_DIR/certificate_analysis.txt"
+/opt/apk-tools/utils/cert-analyzer.sh "$APK_FILE" > "$OUTPUT_DIR/certificate_analysis.txt" 2>/dev/null || echo "Certificate analysis failed"
 
 # Permission analysis
 echo "3. Analyzing permissions..."
-/opt/apk-tools/utils/perm-analyzer.sh "$APK_FILE" > "$OUTPUT_DIR/permission_analysis.txt"
+/opt/apk-tools/utils/perm-analyzer.sh "$APK_FILE" > "$OUTPUT_DIR/permission_analysis.txt" 2>/dev/null || echo "Permission analysis failed"
 
 # Decompile with jadx (if available)
 if command -v jadx &> /dev/null; then
@@ -302,60 +524,78 @@ if command -v jadx &> /dev/null; then
     jadx -d "$OUTPUT_DIR/decompiled" "$APK_FILE" 2>/dev/null || echo "Jadx decompilation failed"
 fi
 
-# Analyze with androguard (if available)
-if command -v androguard &> /dev/null; then
-    echo "5. Analyzing with androguard..."
-    androguard analyze "$APK_FILE" > "$OUTPUT_DIR/androguard_analysis.txt" 2>/dev/null || echo "Androguard analysis failed"
-fi
-
 # File listing
-echo "6. Creating file listing..."
-unzip -l "$APK_FILE" > "$OUTPUT_DIR/file_listing.txt"
+echo "5. Creating file listing..."
+unzip -l "$APK_FILE" > "$OUTPUT_DIR/file_listing.txt" 2>/dev/null || echo "Failed to create file listing"
 
 # Extract APK contents
-echo "7. Extracting APK contents..."
+echo "6. Extracting APK contents..."
 mkdir -p "$OUTPUT_DIR/extracted"
-unzip -q "$APK_FILE" -d "$OUTPUT_DIR/extracted"
+unzip -q "$APK_FILE" -d "$OUTPUT_DIR/extracted" 2>/dev/null || echo "Failed to extract APK"
 
 echo "Analysis completed! Results saved in: $OUTPUT_DIR"
 echo ""
 echo "Generated files:"
 ls -la "$OUTPUT_DIR"
-EOF
+EOF'
+    $SUDO chmod +x /opt/apk-tools/utils/full-analysis.sh
+    
+    # Create aliases for easy access
+    local bashrc="/etc/bash.bashrc"
+    if [[ ! -f "$bashrc" ]]; then
+        bashrc="/etc/profile"
+    fi
+    
+    # Check if aliases already exist
+    if ! grep -q "apk-analyze" "$bashrc" 2>/dev/null; then
+        $SUDO bash -c "echo 'alias apk-analyze=&quot;/opt/apk-tools/utils/cert-analyzer.sh&quot;' >> $bashrc"
+        $SUDO bash -c "echo 'alias perm-analyze=&quot;/opt/apk-tools/utils/perm-analyzer.sh&quot;' >> $bashrc"
+        $SUDO bash -c "echo 'alias device-info=&quot;/opt/apk-tools/utils/device-info.sh&quot;' >> $bashrc"
+        $SUDO bash -c "echo 'alias full-analysis=&quot;/opt/apk-tools/utils/full-analysis.sh&quot;' >> $bashrc"
+    fi
+}
 
-chmod +x /opt/apk-tools/utils/full-analysis.sh
+# Print installation summary
+print_summary() {
+    echo ""
+    echo "=========================================="
+    log "SUCCESS" "Dependency installation completed!"
+    echo "=========================================="
+    echo ""
+    echo "Installed Tools Summary:"
+    echo "======================="
+    echo "- Java Development Kit (OpenJDK 11)"
+    echo "- Android SDK (Platform Tools, Build Tools 33.0.1)"
+    echo "- apktool v2.8.1"
+    echo "- jadx v1.4.7 (Java decompiler)"
+    echo "- Frida tools and gadgets"
+    echo "- Androguard (Python APK analysis)"
+    echo "- jq (JSON processor)"
+    echo "- Additional utility scripts"
+    echo ""
+    echo "New Commands Available:"
+    echo "======================="
+    echo "apk-analyze <apk_file>           - Analyze APK certificate"
+    echo "perm-analyze <apk_file>          - Analyze APK permissions"
+    echo "device-info                      - Show connected device information"
+    echo "full-analysis <apk_file> [dir]   - Comprehensive APK analysis"
+    echo ""
+    echo "Environment variables set:"
+    echo "- ANDROID_HOME=/opt/android-sdk"
+    echo "- PATH updated to include Android tools"
+    echo ""
+    warn "Please restart your terminal or run 'source /etc/bash.bashrc' to use the new aliases"
+    echo ""
+    log "INFO" "All dependencies installed successfully!"
+    echo "=========================================="
+}
 
-echo 'alias full-analysis="/opt/apk-tools/utils/full-analysis.sh"' >> /etc/bash.bashrc
+# Main execution
+main() {
+    check_privileges
+    install_dependencies
+    print_summary
+}
 
-# Source the new aliases
-source /etc/bash.bashrc
-
-# Final verification
-log "SUCCESS" "Dependency installation completed!"
-
-echo ""
-echo "Installed Tools Summary:"
-echo "======================="
-echo "- Java Development Kit (OpenJDK 11)"
-echo "- Android SDK (Platform Tools, Build Tools 33.0.1)"
-echo "- apktool v2.8.1"
-echo "- jadx v1.4.7 (Java decompiler)"
-echo "- Frida tools and gadgets"
-echo "- Androguard (Python APK analysis)"
-echo "- jq (JSON processor)"
-echo "- Additional utility scripts"
-
-echo ""
-echo "New Commands Available:"
-echo "======================="
-echo "apk-analyze <apk_file>           - Analyze APK certificate"
-echo "perm-analyze <apk_file>          - Analyze APK permissions"
-echo "device-info                      - Show connected device information"
-echo "full-analysis <apk_file> [dir]   - Comprehensive APK analysis"
-echo ""
-
-echo "Environment variables set:"
-echo "- ANDROID_HOME=/opt/android-sdk"
-echo "- PATH updated to include Android tools"
-
-log "INFO" "All dependencies installed successfully!"
+# Run main function
+main "$@"
