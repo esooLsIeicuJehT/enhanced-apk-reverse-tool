@@ -1,0 +1,24 @@
+.
+├── CHANGELOG.md
+├── Dockerfile
+├── LICENSE
+├── README.md
+├── apk-reverse-tool.sh
+├── demo.sh
+├── docker-compose.yml
+├── docs
+│   └── API-REFERENCE.md
+├── examples
+│   └── sample-analysis.sh
+├── install-dependencies.sh
+├── outputs
+│   ├── workspace_output_1767092544_3666.txt
+│   ├── workspace_output_1767092552_5673.txt
+│   ├── workspace_output_1767092569_7985.txt
+│   ├── workspace_output_1767092617_3934.txt
+│   ├── workspace_output_1767092619_7164.txt
+│   └── workspace_output_1767092640_2307.txt
+├── requirements.txt
+└── todo.md
+
+4 directories, 18 files

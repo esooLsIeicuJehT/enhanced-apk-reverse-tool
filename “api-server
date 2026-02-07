@@ -1,0 +1,309 @@
+#!/usr/bin/env python3
+"""
+Enhanced APK Reverse Engineering Tool - API Server
+Provides REST API and WebSocket support for mobile and web interfaces
+"""
+
+import os
+import sys
+import json
+import uuid
+import asyncio
+import logging
+from datetime import datetime, timedelta
+from pathlib import Path
+from typing import List, Dict, Any, Optional
+from dataclasses import dataclass, asdict
+from functools import lru_cache
+
+# Flask and Web Framework
+from flask import Flask, request, jsonify, send_file, send_from_directory
+from flask_cors import CORS
+from flask_socketio import SocketIO, emit, join_room, leave_room
+from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
+
+# File processing
+import zipfile
+import tempfile
+import shutil
+from multiprocessing import Process, Queue
+
+# Security
+import jwt
+from cryptography.fernet import Fernet
+import secrets
+
+# Analysis Tool Integration
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from apk_reverse_tool import APKAnalyzer
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('api_server.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+# Configuration
+class Config:
+    SECRET_KEY = os.environ.get('SECRET_KEY', secrets.token_urlsafe(32))
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', secrets.token_urlsafe(32))
+    UPLOAD_FOLDER = 'uploads'
+    RESULTS_FOLDER = 'results'
+    MAX_CONTENT_LENGTH = 100 * 1024 * 1024  # 100MB max file size
+    ALLOWED_EXTENSIONS = {'apk'}
+    JWT_EXPIRATION_HOURS = 24
+    ANALYSIS_TIMEOUT = 3600  # 1 hour
+
+# Initialize Flask app
+app = Flask(__name__)
+app.config.from_object(Config)
+
+# Enable CORS
+CORS(app, origins="*")
+
+# Initialize SocketIO
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+
+# Ensure directories exist
+os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(Config.RESULTS_FOLDER, exist_ok=True)
+
+# Global state
+analysis_queue = Queue()
+active_analyses = {}
+user_sessions = {}
+
+# Data models
+@dataclass
+class AnalysisRequest:
+    id: str
+    filename: str
+    file_path: str
+    user_id: str
+    options: Dict[str, Any]
+    status: str = "queued"
+    progress: int = 0
+    current_step: str = ""
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    result: Optional[Dict[str, Any]] = None
+    error: Optional[str] = None
+
+@dataclass
+class User:
+    id: str
+    username: str
+    email: str
+    password_hash: str
+    created_at: datetime
+    last_login: Optional[datetime] = None
+
+# Utility functions
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in Config.ALLOWED_EXTENSIONS
+
+def generate_analysis_id():
+    return str(uuid.uuid4())
+
+def generate_jwt_token(user_id):
+    payload = {
+        'user_id': user_id,
+        'exp': datetime.utcnow() + timedelta(hours=Config.JWT_EXPIRATION_HOURS),
+        'iat': datetime.utcnow()
+    }
+    return jwt.encode(payload, Config.JWT_SECRET_KEY, algorithm='HS256')
+
+def verify_jwt_token(token):
+    try:
+        payload = jwt.decode(token, Config.JWT_SECRET_KEY, algorithms=['HS256'])
+        return payload['user_id']
+    except jwt.ExpiredSignatureError:
+        return None
+    except jwt.InvalidTokenError:
+        return None
+
+def get_user_by_token(token):
+    user_id = verify_jwt_token(token)
+    if user_id and user_id in user_sessions:
+        return user_sessions[user_id]['user']
+    return None
+
+# Authentication endpoints
+@app.route('/api/auth/register', methods=['POST'])
+def register():
+    try:
+        data = request.get_json()
+        username = data.get('username')
+        email = data.get('email')
+        password = data.get('password')
+        
+        if not all([username, email, password]):
+            return jsonify({'error': 'Missing required fields'}), 400
+        
+        # Check if user already exists
+        for session in user_sessions.values():
+            if session['user'].email == email or session['user'].username == username:
+                return jsonify({'error': 'User already exists'}), 409
+        
+        # Create new user
+        user = User(
+            id=str(uuid.uuid4()),
+            username=username,
+            email=email,
+            password_hash=generate_password_hash(password),
+            created_at=datetime.utcnow()
+        )
+        
+        user_sessions[user.id] = {
+            'user': user,
+            'analyses': []
+        }
+        
+        token = generate_jwt_token(user.id)
+        
+        return jsonify({
+            'token': token,
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email
+            }
+        }), 201
+        
+    except Exception as e:
+        logger.error(f"Registration error: {e}")
+        return jsonify({'error': 'Registration failed'}), 500
+
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    try:
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+        
+        if not all([username, password]):
+            return jsonify({'error': 'Missing username or password'}), 400
+        
+        # Find user
+        user = None
+        for session in user_sessions.values():
+            if session['user'].username == username:
+                user = session['user']
+                break
+        
+        if not user or not check_password_hash(user.password_hash, password):
+            return jsonify({'error': 'Invalid credentials'}), 401
+        
+        # Update last login
+        user.last_login = datetime.utcnow()
+        
+        token = generate_jwt_token(user.id)
+        
+        return jsonify({
+            'token': token,
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Login error: {e}")
+        return jsonify({'error': 'Login failed'}), 500
+
+@app.route('/api/auth/profile', methods=['GET'])
+def get_profile():
+    try:
+        token = request.headers.get('Authorization', '').replace('Bearer ', '')
+        user = get_user_by_token(token)
+        
+        if not user:
+            return jsonify({'error': 'Invalid token'}), 401
+        
+        return jsonify({
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'created_at': user.created_at.isoformat(),
+                'last_login': user.last_login.isoformat() if user.last_login else None
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Profile error: {e}")
+        return jsonify({'error': 'Failed to get profile'}), 500
+
+# Analysis endpoints
+@app.route('/api/analysis/upload', methods=['POST'])
+def upload_file():
+    try:
+        token = request.headers.get('Authorization', '').replace('Bearer ', '')
+        user = get_user_by_token(token)
+        
+        if not user:
+            return jsonify({'error': 'Authentication required'}), 401
+        
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+        
+        if not allowed_file(file.filename):
+            return jsonify({'error': 'File type not allowed'}), 400
+        
+        # Get analysis options
+        options = request.form.get('options', '{}')
+        try:
+            analysis_options = json.loads(options)
+        except json.JSONDecodeError:
+            analysis_options = {}
+        
+        # Generate unique filename
+        analysis_id = generate_analysis_id()
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(Config.UPLOAD_FOLDER, f"{analysis_id}_{filename}")
+        
+        # Save file
+        file.save(file_path)
+        
+        # Create analysis request
+        analysis = AnalysisRequest(
+            id=analysis_id,
+            filename=filename,
+            file_path=file_path,
+            user_id=user.id,
+            options=analysis_options,
+            status="queued",
+            started_at=datetime.utcnow()
+        )
+        
+        active_analyses[analysis_id] = analysis
+        
+        # Add to user's analyses
+        user_sessions[user.id]['analyses'].append(analysis_id)
+        
+        # Queue for analysis
+        analysis_queue.put(analysis_id)
+        
+        return jsonify({
+            'analysis_id': analysis_id,
+            'status': 'queued',
+            'message': 'File uploaded successfully'
+        }), 201
+        
+    except Exception as e:
+        logger.error(f"Upload error: {e}")
+        return jsonify({'error': 'Upload failed'}), 500
+
+@app.route('/api/analysis/

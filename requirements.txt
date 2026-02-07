@@ -1,0 +1,66 @@
+# Python Dependencies for Enhanced APK Reverse Engineering Tool
+# This file lists all required Python packages for advanced analysis features
+
+# Core Analysis Libraries
+androguard>=3.4.0
+apkutils>=0.1.1
+pyaxmlparser>=0.3.0
+
+# Security & Cryptography
+cryptography>=3.4.8
+pyOpenSSL>=20.0.1
+
+# Data Processing & Analysis
+pandas>=1.3.0
+numpy>=1.21.0
+scipy>=1.7.0
+
+# JSON Processing
+jq>=1.2.0
+simplejson>=3.17.0
+
+# Network & HTTP
+requests>=2.26.0
+urllib3>=1.26.5
+
+# File Processing
+zipfile36>=0.1.3
+python-magic>=0.4.24
+
+# Machine Learning (for advanced analysis)
+scikit-learn>=1.0.0
+tensorflow>=2.6.0
+
+# Image Processing (for icon analysis)
+Pillow>=8.3.0
+opencv-python>=4.5.3
+
+# Visualization
+matplotlib>=3.4.0
+seaborn>=0.11.0
+plotly>=5.3.0
+
+# Web & API
+flask>=2.0.0
+flask-restx>=0.5.0
+gunicorn>=20.1.0
+
+# Database (for storing analysis results)
+sqlite3
+sqlalchemy>=1.4.0
+
+# Testing & Development
+pytest>=6.2.0
+pytest-cov>=2.12.0
+black>=21.9.0
+flake8>=3.9.0
+
+# Documentation
+sphinx>=4.2.0
+sphinx-rtd-theme>=1.0.0
+
+# Utility Libraries
+tqdm>=4.62.0
+click>=8.0.0
+colorama>=0.4.4
+tabulate>=0.8.9

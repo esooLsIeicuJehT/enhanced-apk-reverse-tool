@@ -1,0 +1,103 @@
+# Enhanced APK Reverse Engineering Tool v2.0 - Quick Start Guide
+
+## 🚀 5-Minute Quick Start
+
+### 1. Extract the Archive
+```bash
+unzip enhanced-apk-reverse-tool-v2.0.zip
+cd enhanced-apk-reverse-tool-v2.0
+```
+
+### 2. Install Dependencies (One-time Setup)
+```bash
+sudo ./install-dependencies.sh
+```
+
+### 3. Connect Android Device
+- Enable Developer Options on your Android device
+- Enable USB Debugging
+- Connect via USB and authorize
+
+### 4. Basic APK Analysis
+```bash
+# Pull APK from device
+./apk-reverse-tool.sh pull com.example.app
+
+# Analyze the APK
+./apk-reverse-tool.sh analyze app.apk --deep-analysis
+```
+
+### 5. Frida Without Root
+```bash
+# Patch APK with Frida gadget
+./apk-reverse-tool.sh patch app.apk --arch arm
+
+# Install and analyze
+adb install app.gadget.apk
+frida -U com.example.app -l ssl-bypass.js
+```
+
+## 📁 What's Included
+
+### Core Files
+- `apk-reverse-tool.sh` - Main enhanced tool
+- `install-dependencies.sh` - Auto-installer
+- `demo.sh` - Interactive demonstration
+
+### Documentation
+- `README.md` - Complete user guide
+- `docs/FRIDA-NO-ROOT-GUIDE.md` - Frida without root tutorial
+- `docs/API-REFERENCE.md` - Full API documentation
+
+### Examples
+- `examples/frida-no-root-demo.sh` - Frida demo
+- `examples/sample-analysis.sh` - Usage examples
+
+### Deployment
+- `Dockerfile` - Container image
+- `docker-compose.yml` - Full stack deployment
+
+## 🎯 Key Features
+
+✅ **Frida Without Root** - Dynamic analysis on any Android device
+✅ **Security Analysis** - Certificate, permission, vulnerability scanning
+✅ **Interactive Mode** - User-friendly guided workflows
+✅ **Batch Processing** - Analyze multiple APKs efficiently
+✅ **REST API** - Remote analysis and integration
+✅ **Docker Support** - Containerized deployment
+
+## 🛠️ System Requirements
+
+- Linux (Ubuntu/Debian recommended)
+- Java 11+
+- Python 3.7+
+- 2GB+ RAM
+- Android device with USB debugging
+
+## 📞 Getting Help
+
+```bash
+# Show help
+./apk-reverse-tool.sh --help
+
+# Interactive demo
+./demo.sh
+
+# Frida demo
+./examples/frida-no-root-demo.sh
+```
+
+## 🎉 Success Stories
+
+- **Banking Apps**: SSL certificate analysis and bypass
+- **Games**: Runtime behavior modification and analysis
+- **API Security**: Network traffic interception and documentation
+- **Malware Analysis**: Comprehensive static and dynamic analysis
+
+---
+
+**Ready to start?** Run `./demo.sh` for an interactive tour of all features!
+
+📚 **Documentation**: Check README.md for detailed instructions
+🐳 **Docker**: Use docker-compose.yml for quick setup
+📱 **Frida**: See docs/FRIDA-NO-ROOT-GUIDE.md for dynamic analysis

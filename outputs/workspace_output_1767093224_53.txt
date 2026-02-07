@@ -1,0 +1,16 @@
+  - Interactive mode with guided workflow
+  - JSON-based reporting with detailed metrics
+  - Automated vulnerability scanning
+  - Code structure analysis
+
+- **🔧 Developer Tools**
+  - Plugin system for extensibility
+  - Enhanced logging and debugging
+  - Multiple output formats (JSON, XML, text)
+  - Configuration management
+
+## 📋 Requirements
+
+### System Requirements
+- Linux (Ubuntu/Debian recommended)
+- Java 11 or higher

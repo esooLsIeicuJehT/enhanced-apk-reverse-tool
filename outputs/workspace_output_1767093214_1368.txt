@@ -1,0 +1,50 @@
+# Enhanced APK Reverse Engineering Tool v2.0
+
+A comprehensive, enhanced version of the popular `apk.sh` tool with advanced reverse engineering capabilities, security analysis, and device compatibility features.
+
+## 🚀 Features
+
+### Core Functionality (Enhanced from original apk.sh)
+- **APK Pulling** - Pull APKs from Android devices with split APK support
+- **Decoding** - Decode APKs using apktool with enhanced options
+- **Building** - Rebuild APKs with validation and error checking
+- **Patching** - Inject Frida gadgets and other runtime analysis tools
+- **Package Renaming** - Rename APK packages with dependency resolution
+
+### 🆕 New Advanced Features
+- **🔍 Comprehensive Security Analysis**
+  - Certificate analysis and validation
+  - Permission categorization (dangerous, normal, signature)
+  - Security vulnerability scanning
+  - Debug mode detection
+  - Hardcoded secret detection
+
+- **📱 Device Compatibility**
+  - Automatic device compatibility checking
+  - Architecture detection and validation
+  - Android version compatibility analysis
+  - Multi-device support
+
+- **🛡️ Enhanced Security Features**
+  - Anti-tampering detection
+  - Code obfuscation analysis
+  - Network security configuration analysis
+  - Backup and restore functionality
+
+- **📊 Advanced Analysis**
+  - Interactive mode with guided workflow
+  - JSON-based reporting with detailed metrics
+  - Automated vulnerability scanning
+  - Code structure analysis
+
+- **🔧 Developer Tools**
+  - Plugin system for extensibility
+  - Enhanced logging and debugging
+  - Multiple output formats (JSON, XML, text)
+  - Configuration management
+
+## 📋 Requirements
+
+### System Requirements
+- Linux (Ubuntu/Debian recommended)
+- Java 11 or higher

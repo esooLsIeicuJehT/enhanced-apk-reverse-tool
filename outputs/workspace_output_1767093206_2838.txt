@@ -1,0 +1,20 @@
+     5444  2025-12-30 11:03   Dockerfile
+        0  2025-12-30 11:04   docs/
+    14287  2025-12-30 11:02   docs/API-REFERENCE.md
+    12351  2025-12-30 11:04   docs/FRIDA-NO-ROOT-GUIDE.md
+     4603  2025-12-30 11:03   docker-compose.yml
+    24365  2025-12-30 11:02   apk-reverse-tool.sh
+    12903  2025-12-30 11:02   README.md
+     4911  2025-12-30 11:04   todo.md
+        0  2025-12-30 11:04   examples/
+    15061  2025-12-30 11:04   examples/frida-no-root-demo.sh
+    15509  2025-12-30 11:02   examples/sample-analysis.sh
+    30109  2025-12-30 11:03   LICENSE
+    17697  2025-12-30 11:03   demo.sh
+    10406  2025-12-30 11:02   install-dependencies.sh
+     2593  2025-12-30 11:07   QUICK-START.txt
+        0  2025-12-30 11:09   android-companion/
+        0  2025-12-30 11:08   web-interface/
+        0  2025-12-30 11:13   api-server/
+---------                     -------
+   178270                     20 files
