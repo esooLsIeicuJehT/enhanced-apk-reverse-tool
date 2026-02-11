@@ -1,0 +1,5 @@
+0000000                                   v   a   l       a   l   l   G
+0000020   r   a   n   t   e   d       =       p   e   r   m   i   s   s
+0000040   i   o   n   s   .   v   a   l   u   e   s   .   a   l   l 346
+0000060 225 217   a   l   l       {       i   t       }  \n
+0000075

@@ -1,0 +1,114 @@
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   apk-reverse-tool.sh
+	modified:   docker-compose.yml
+	modified:   outputs/workspace_output_1770785664_6530.txt
+	modified:   todo.md
+	modified:   web-interface/package.json
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	Dockerfile.main-tool
+	INSTALLATION.md
+	android-companion/app/src/main/java/com/apktool/companion/ui/DeviceManagementActivity.kt
+	android-companion/app/src/main/java/com/apktool/companion/ui/SettingsActivity.kt
+	android-companion/app/src/main/java/com/apktool/companion/ui/viewmodel/
+	android-companion/app/src/main/res/
+	integrate-features.sh
+	integrate.sh
+	outputs/workspace_output_1770785666_1692.txt
+	outputs/workspace_output_1770785785_7305.txt
+	outputs/workspace_output_1770785797_81.txt
+	outputs/workspace_output_1770785799_9877.txt
+	outputs/workspace_output_1770785801_2803.txt
+	outputs/workspace_output_1770785809_4692.txt
+	outputs/workspace_output_1770785812_3947.txt
+	outputs/workspace_output_1770785854_4734.txt
+	outputs/workspace_output_1770785871_8397.txt
+	outputs/workspace_output_1770785873_2373.txt
+	outputs/workspace_output_1770785875_3536.txt
+	outputs/workspace_output_1770785877_7035.txt
+	outputs/workspace_output_1770785879_3760.txt
+	outputs/workspace_output_1770785881_4561.txt
+	outputs/workspace_output_1770785883_3038.txt
+	outputs/workspace_output_1770785886_1186.txt
+	outputs/workspace_output_1770785888_230.txt
+	outputs/workspace_output_1770785891_5343.txt
+	outputs/workspace_output_1770785893_7863.txt
+	outputs/workspace_output_1770785894_6262.txt
+	outputs/workspace_output_1770785896_7403.txt
+	outputs/workspace_output_1770785898_7243.txt
+	outputs/workspace_output_1770785899_4710.txt
+	outputs/workspace_output_1770785901_3695.txt
+	outputs/workspace_output_1770785905_175.txt
+	outputs/workspace_output_1770785946_5627.txt
+	outputs/workspace_output_1770785948_6301.txt
+	outputs/workspace_output_1770785956_9095.txt
+	outputs/workspace_output_1770785957_333.txt
+	outputs/workspace_output_1770785978_5875.txt
+	outputs/workspace_output_1770785980_7104.txt
+	outputs/workspace_output_1770785983_9603.txt
+	outputs/workspace_output_1770785985_9925.txt
+	outputs/workspace_output_1770786001_8652.txt
+	outputs/workspace_output_1770786004_3101.txt
+	outputs/workspace_output_1770786023_6611.txt
+	outputs/workspace_output_1770786025_7153.txt
+	outputs/workspace_output_1770786029_45.txt
+	outputs/workspace_output_1770786031_9426.txt
+	outputs/workspace_output_1770786033_5424.txt
+	outputs/workspace_output_1770786036_5575.txt
+	outputs/workspace_output_1770786038_7331.txt
+	outputs/workspace_output_1770786042_5296.txt
+	outputs/workspace_output_1770786050_2828.txt
+	outputs/workspace_output_1770786054_7605.txt
+	outputs/workspace_output_1770786056_6162.txt
+	outputs/workspace_output_1770786162_203.txt
+	outputs/workspace_output_1770786164_110.txt
+	outputs/workspace_output_1770786166_3802.txt
+	outputs/workspace_output_1770786168_1588.txt
+	outputs/workspace_output_1770786186_127.txt
+	outputs/workspace_output_1770786191_2531.txt
+	outputs/workspace_output_1770786197_3832.txt
+	outputs/workspace_output_1770786199_1867.txt
+	outputs/workspace_output_1770786211_6775.txt
+	outputs/workspace_output_1770786213_7786.txt
+	outputs/workspace_output_1770786231_9863.txt
+	outputs/workspace_output_1770786233_5336.txt
+	outputs/workspace_output_1770786235_9275.txt
+	outputs/workspace_output_1770786242_2137.txt
+	outputs/workspace_output_1770786244_1416.txt
+	outputs/workspace_output_1770786247_2863.txt
+	outputs/workspace_output_1770786248_7808.txt
+	outputs/workspace_output_1770786250_7360.txt
+	outputs/workspace_output_1770786252_5927.txt
+	outputs/workspace_output_1770786279_1809.txt
+	outputs/workspace_output_1770787632_6797.txt
+	outputs/workspace_output_1770787669_1548.txt
+	outputs/workspace_output_1770787671_3621.txt
+	outputs/workspace_output_1770787678_2240.txt
+	outputs/workspace_output_1770787690_1197.txt
+	outputs/workspace_output_1770787706_6393.txt
+	outputs/workspace_output_1770787718_7327.txt
+	outputs/workspace_output_1770787720_9972.txt
+	outputs/workspace_output_1770787722_4960.txt
+	outputs/workspace_output_1770787726_5916.txt
+	outputs/workspace_output_1770787728_181.txt
+	outputs/workspace_output_1770787730_2278.txt
+	outputs/workspace_output_1770787732_4735.txt
+	outputs/workspace_output_1770787734_4235.txt
+	outputs/workspace_output_1770787747_1439.txt
+	outputs/workspace_output_1770787751_4028.txt
+	outputs/workspace_output_1770787761_1935.txt
+	packages/
+	summarized_conversations/original_conversation_1770785743_6992.txt
+	web-interface/Dockerfile
+	web-interface/nginx.conf
+	web-interface/src/components/Charts.tsx
+	web-interface/src/components/DashboardWidgets.tsx
+	web-interface/src/components/ReportVisualization.tsx
+
+no changes added to commit (use "git add" and/or "git commit -a")

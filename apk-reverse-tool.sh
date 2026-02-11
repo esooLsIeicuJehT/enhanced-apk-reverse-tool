@@ -68,6 +68,11 @@
 VERSION="2.0"
 TOOL_NAME="apk-reverse-tool"
 
+# Source OWASP and ML integration features
+if [[ -f "integrate.sh" ]]; then
+    source "integrate.sh"
+fi
+
 # Color codes for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'

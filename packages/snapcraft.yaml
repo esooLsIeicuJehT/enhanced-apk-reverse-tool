@@ -1,0 +1,101 @@
+name: apk-reverse-tool
+version: '2.0.0'
+summary: Enhanced APK Reverse Engineering Tool with security analysis
+description: |
+  A comprehensive tool for reverse engineering Android APKs with features:
+  - Security analysis and vulnerability scanning
+  - OWASP Mobile Top 10 compliance checking
+  - Malware detection using machine learning
+  - Certificate and permission analysis
+  - Code analysis and decompilation
+  - Interactive command-line interface
+  - REST API for remote access
+  - Real-time WebSocket updates
+  - Plugin system for extensibility
+
+base: core22
+grade: stable
+confinement: strict
+
+apps:
+  apk-reverse-tool:
+    command: usr/bin/apk-reverse-tool
+    plugs:
+      - home
+      - network
+      - network-bind
+      - adb-support
+    environment:
+      PATH: "$PATH:$SNAP/usr/bin:$SNAP/opt/apk-reverse-tool"
+      PYTHONPATH: "$SNAP/opt/apk-reverse-tool:$PYTHONPATH"
+    command-chain:
+      - bin/apk-launch.sh
+
+  api-server:
+    command: usr/bin/python3 $SNAP/opt/apk-reverse-tool/api-server/server.py
+    daemon: simple
+    plugs:
+      - home
+      - network
+      - network-bind
+    environment:
+      PATH: "$PATH:$SNAP/usr/bin:$SNAP/opt/apk-reverse-tool"
+      PYTHONPATH: "$SNAP/opt/apk-reverse-tool:$PYTHONPATH"
+
+parts:
+  apk-reverse-tool:
+    plugin: python
+    source: .
+    python-requirements:
+      - requirements.txt
+    python-packages:
+      - flask
+      - flask-cors
+      - flask-socketio
+      - websocket-client
+      - requests
+      - pyyaml
+    stage-packages:
+      - openjdk-11-jre
+      - git
+      - wget
+      - curl
+      - unzip
+      - adb
+    build-environment:
+      - PATH: "$PATH:$SNAPCRAFT_PART_INSTALL/usr/bin"
+      - JAVA_HOME: "$SNAPCRAFT_PART_INSTALL/usr/lib/jvm/java-11-openjdk-$SNAPCRAFT_TARGET_ARCH"
+      - ANDROID_HOME: "$SNAPCRAFT_PART_INSTALL/usr/lib/android-sdk"
+    override-build: |
+      snapcraftctl build
+      # Create Python virtual environment
+      python3 -m venv "$SNAPCRAFT_PART_INSTALL/opt/apk-reverse-tool/venv"
+      "$SNAPCRAFT_PART_INSTALL/opt/apk-reverse-tool/venv/bin/pip" install --upgrade pip
+      "$SNAPCRAFT_PART_INSTALL/opt/apk-reverse-tool/venv/bin/pip" install flask flask-cors flask-socketio
+      # Download and install apktool
+      wget -O "$SNAPCRAFT_PART_INSTALL/usr/bin/apktool.jar" \
+        https://github.com/iBotPeaches/Apktool/releases/download/v2.8.1/apktool_2.8.1.jar
+      chmod +x "$SNAPCRAFT_PART_INSTALL/usr/bin/apktool.jar"
+    prime:
+      - opt/apk-reverse-tool/*
+      - usr/bin/apk-reverse-tool
+      - usr/bin/apktool.jar
+      - opt/apk-reverse-tool/venv/*
+
+  launcher:
+    plugin: dump
+    source: snap-local
+    organize:
+      apk-launch.sh: bin/apk-launch.sh
+
+  configs:
+    plugin: dump
+    source: snap-local
+    organize:
+      config.json: etc/apk-reverse-tool/config.json
+
+  scripts:
+    plugin: dump
+    source: snap-local
+    organize:
+      install-tools.sh: bin/install-tools.sh

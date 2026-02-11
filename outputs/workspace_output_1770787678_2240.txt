@@ -1,0 +1,9 @@
+103:# http://localhost:3000
+262:# - APK Tool API (http://localhost:8080)
+267:# - Prometheus Monitoring (http://localhost:9090)
+355:        "url": "postgresql://apktool:apktool123@localhost:5432/apktool_db",
+379:export REACT_APP_API_URL="http://localhost:8080"
+380:export REACT_APP_WEBSOCKET_URL="ws://localhost:80:80"
+513:curl http://localhost:8080/health
+516:curl http://localhost:3000
+bash: line 4: /:: No such file or directory

@@ -1,0 +1,3 @@
+        https://github.com/iBotPraftPeaches/Apktool/releases/download/v2.8.1/apk:tool_2.8.1.jar
+      chmod +x "$SNAPCRAFT_PART_INSTALL/usr/bin/apktool.jar"
+    prime:

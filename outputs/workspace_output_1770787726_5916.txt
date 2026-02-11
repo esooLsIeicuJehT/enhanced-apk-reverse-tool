@@ -1,0 +1,16 @@
+sudo systemctl start apk-reverse-tool.service
+sudo systemctl status apk-reverse-tool.service
+```
+
+### Web Interface Configuration
+
+#### Environment Variables
+```bash
+# Set API URL
+export REACT_APP_API_URL="http://localhost:8080"
+export REACT_APP_WEBSOCKET_URL="ws://localhost:8080:80"
+```
+
+#### Build and Deploy
+```bash
+cd web-interface

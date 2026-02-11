@@ -1,0 +1,5 @@
+  - Interactive command-line interface
+  - REST API for remote access
+  -Real-time WebSocket updates
+  - Plugin system for extensibility
+

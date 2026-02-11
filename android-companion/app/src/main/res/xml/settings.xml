@@ -1,0 +1,65 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory android:title="General">
+        <EditTextPreference
+            android:key="api_endpoint"
+            android:title="API Endpoint"
+            android:summary="Server URL for analysis backend"
+            android:defaultValue="http://localhost:8080"
+            android:inputType="textUri" />
+
+        <SwitchPreference
+            android:key="notifications_enabled"
+            android:title="Notifications"
+            android:summary="Enable analysis notifications"
+            android:defaultValue="true" />
+
+        <SwitchPreference
+            android:key="biometric_enabled"
+            android:title="Biometric Authentication"
+            android:summary="Require biometric for sensitive operations"
+            android:defaultValue="false" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Storage">
+        <Preference
+            android:key="storage_info"
+            android:title="Storage Usage"
+            android:summary="View and manage storage" />
+
+        <Preference
+            android:key="clear_cache"
+            android:title="Clear Cache"
+            android:summary="Clear temporary analysis data" />
+
+        <Preference
+            android:key="export_data"
+            android:title="Export Data"
+            android:summary="Export analysis results and settings" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Advanced">
+        <SwitchPreference
+            android:key="debug_mode"
+            title="Debug Mode"
+            android:summary="Enable verbose logging"
+            android:defaultValue="false" />
+
+        <Preference
+            android:key="developer_options"
+            android:title="Developer Options"
+            android:summary="Advanced configuration options" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="About">
+        <Preference
+            android:key="version"
+            android:title="Version"
+            android:summary="2.0.0"
+            android:enabled="false" />
+
+        <Preference
+            android:key="about"
+            android:title="About"
+            android:summary="Learn about APK Reverse Tool" />
+    </PreferenceCategory>
+</PreferenceScreen>

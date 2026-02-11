@@ -1,0 +1,50 @@
+            apk_pull_enhanced "$@"
+            ;;
+        "analyze")
+            shift
+            analyze_apk "$@"
+            ;;
+        "interactive"|"i")
+            interactive_mode
+            ;;
+        "help"|"-h"|"--help")
+            show_help
+            ;;
+        *)
+            show_help
+            exit 1
+            ;;
+    esac
+}
+
+# Show help
+show_help() {
+    cat << EOF
+$TOOL_NAME v$VERSION - Enhanced Android APK Reverse Engineering Tool
+
+USAGE:
+    $0 <command> [options]
+
+COMMANDS:
+    pull <package>          Pull APK from connected device
+    analyze <apk_file>      Comprehensive APK analysis
+    interactive             Start interactive mode
+    help                    Show this help message
+
+EXAMPLES:
+    $0 pull com.example.app
+    $0 analyze app.apk
+    $0 interactive
+
+For more detailed help, use: $0 <command> --help
+
+EOF
+}
+
+# Check if jq is available for JSON processing
+if ! command -v jq &> /dev/null; then
+    log "WARN" "jq not found. JSON processing features will be limited"
+fi
+
+# Run main function with all arguments
+main "$@"

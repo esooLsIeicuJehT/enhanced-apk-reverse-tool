@@ -1,0 +1,4 @@
+17:- **Operating System**: Linux (Ubuntu 20.04+, Debian 11+, Fedora 35+, Arch Linux), macOS 10.15+, or Windows 10+
+46:**Supported Platforms:** Linux, macOS, Windows (via WSL)
+76:#### macOS
+209:### macOS

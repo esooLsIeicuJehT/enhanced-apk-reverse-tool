@@ -1,0 +1,28 @@
+#!/bin/bash
+
+set -e
+
+# Ask user if they want to keep data
+echo ""
+echo "APK Reverse Engineering Tool has been removed."
+echo ""
+echo "Do you want to remove the data directories? (no/yes)"
+read -r response
+
+case "$response" in
+    [yY][eE][sS])
+        echo "Removing data directories..."
+        rm -rf /var/lib/apk-reverse-tool
+        rm -rf /var/log/apk-reverse-tool
+        echo "Data directories removed."
+        ;;
+    *)
+        echo "Keeping data directories:"
+        echo "  /var/lib/apk-reverse-tool"
+        echo "  /var/log/apk-reverse-tool"
+        ;;
+esac
+
+echo "Uninstallation complete."
+
+exit 0

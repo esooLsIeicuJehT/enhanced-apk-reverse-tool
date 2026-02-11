@@ -1,0 +1,5 @@
+      - ANDROID_HOME: "$SNAPCRAFT_PART_INSTALL/usr/lib/android-sdk"
+    override-build: |
+      snapcraftctl build
+      # Create Python virtual environment
+      python3 -m venv "$SNAPCRAFT_PART_INSTALL/opt/apk-reverse-tool/venv"

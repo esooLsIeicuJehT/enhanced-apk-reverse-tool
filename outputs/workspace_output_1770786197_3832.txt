@@ -1,0 +1,7 @@
+      # Download and install apktool
+      wget -O "$SNAPCRAFT_PART_INSTALL/usr/bin/apktool.jar" \
+        https://github.com/iBotPraftPeaches/Apktool/releases/download/v2.8.1/apk:tool_2.8.1.jar
+      chmod +x "$SNAPCRAFT_PART_INSTALL/usr/bin/apktool.jar"
+    prime:
+      - opt/apk-reverse-tool/*
+bash: line 4: /execute:: No such file or directory

@@ -1,0 +1,106 @@
+# Maintainer: APK Tool Team <dev@apktool.com>
+
+pkgname=apk-reverse-tool
+pkgver=2.0.0
+pkgrel=1
+pkgdesc="Enhanced APK Reverse Engineering Tool with OWASP analysis and ML detection"
+arch=('any')
+url="https://github.com/esooLsIeicuJehT/enhanced-apk-reverse-tool"
+license=('MIT')
+depends=(
+    'python3'
+    'python-pip'
+    'jdk-openjdk'
+    'android-tools'
+    'git'
+    'wget'
+    'curl'
+    'unzip'
+    'python-flask'
+    'python-flask-cors'
+    'python-flask-socketio'
+)
+optdepends=(
+    'jadx: Java APK decompiler'
+    'apktool: APK decompiling and rebuilding'
+    'frida-tools: Dynamic instrumentation framework'
+)
+makedepends=('python-setuptools')
+backup=('etc/apk-reverse-tool/config.json')
+install="${pkgname}.install"
+source=(
+    "${pkgname}-${pkgver}.tar.gz"
+    "${pkgname}.service"
+    "${pkgname}.desktop"
+)
+sha256sums=(
+    'SKIP'
+    'SKIP'
+    'SKIP'
+)
+
+prepare() {
+    cd "${pkgname}-${pkgver}"
+    
+    # Create Python virtual environment
+    python -m venv venv
+    source venv/bin/activate
+    pip install --upgrade pip
+    pip install flask flask-cors flask-socketio websocket-client requests pyyaml
+}
+
+build() {
+    cd "${pkgname}-${pkgver}"
+    
+    # Source virtual environment
+    source venv/bin/activate
+    
+    # Build the package
+    python setup.py build
+}
+
+package() {
+    cd "${pkgname}-${pkgver}"
+    
+    # Create directories
+    install -d "${pkgdir}/opt/${pkgname}"
+    install -d "${pkgdir}/usr/bin"
+    install -d "${pkgdir}/var/lib/${pkgname}"
+    install -d "${pkgdir}/var/log/${pkgname}"
+    install -d "${pkgdir}/etc/${pkgname}"
+    install -d "${pkgdir}/usr/share/doc/${pkgname}"
+    install -d "${pkgdir}/usr/share/applications"
+    install -d "${pkgdir}/usr/lib/systemd/system"
+    
+    # Copy tool files
+    cp -r * "${pkgdir}/opt/${pkgname}/"
+    chmod +x "${pkgdir}/opt/${pkgname}/apk-reverse-tool.sh"
+    
+    # Create symlink for CLI access
+    ln -s "/opt/${pkgname}/apk-reverse-tool.sh" "${pkgdir}/usr/bin/${pkgname}"
+    
+    # Copy virtual environment
+    cp -r venv "${pkgdir}/opt/${pkgname}/"
+    
+    # Install systemd service
+    install -Dm0644 "${srcdir}/${pkgname}.service" \
+        "${pkgdir}/usr/lib/systemd/system/${pkgname}.service"
+    
+    # Install desktop file
+    install -Dm0644 "${srcdir}/${pkgname}.desktop" \
+        "${pkgdir}/usr/share/applications/${pkgname}.desktop"
+    
+    # Install documentation
+    install -Dm0644 "README.md" "${pkgdir}/usr/share/doc/${pkgname}/README.md"
+    install -Dm0644 "CHANGELOG.md" "${pkgdir}/usr/share/doc/${pkgname}/CHANGELOG.md"
+    
+    # Install configuration file
+    install -Dm0644 "config.json" "${pkgdir}/etc/${pkgname}/config.json"
+    
+    # Install license
+    install -Dm0644 "LICENSE" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+    
+    # Set permissions
+    chmod -R 755 "${pkgdir}/opt/${pkgname}"
+    chmod -R 644 "${pkgdir}/etc/${pkgname}"
+}

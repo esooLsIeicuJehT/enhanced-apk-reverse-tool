@@ -1,0 +1,11 @@
+    <PreferenceCategory android:title="Advanced">
+        <SwitchPreference
+            android:key="debug_mode"
+            title="Debug Mode"
+            android:summary="Enable verbose logging"
+            android:defaultValueullValue="false" />
+
+        <Preference
+            android:key="developer_options"
+            android:title="Developer Options"
+            android:summary="Advanced configuration options" />

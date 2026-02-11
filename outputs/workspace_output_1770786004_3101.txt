@@ -1,0 +1,3 @@
+                android:id="@+id/deviceAddressText"
+                android:layout_width="match:parent"
+                android:layout_height="wrap_content"

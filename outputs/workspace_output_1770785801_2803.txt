@@ -1,0 +1,6 @@
+        <CardContent>
+          <Typography variant="h6".gutterBottom}>
+            Malware Detection Results
+          </Typography>
+          <Alert severity={severityColors[results.classification] || 'info'} sx={{ mb: 2 }}>
+            <AlertTitle>

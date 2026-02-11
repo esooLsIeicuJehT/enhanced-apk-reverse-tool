@@ -1,0 +1,84 @@
+# Multi-stage build for main APK Reverse Engineering Tool
+FROM ubuntu:22.04 AS builder
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    python3 \
+    python3-pip \
+    openjdk-11-jdk \
+    git \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy tool files
+COPY . /tmp/apk-reverse-tool
+WORKDIR /tmp/apk-reverse-tool
+
+# Install Python dependencies
+RUN pip3 install --no-cache-dir -r requirements.txt
+
+# Install apktool
+RUN wget https://github.com/iBotPeaches/Apktool/releases/download/v2.8.1/apktool_2.8.1.jar -O /usr/local/bin/apktool.jar \
+    && chmod +x /usr/local/bin/apktool.jar
+
+# Install jadx
+RUN wget https://github.com/skylot/jadx/releases/download/v1.4.7/jadx-1.4.7.zip -O /tmp/jadx.zip \
+    && unzip /tmp/jadx.zip -d /opt/ \
+    && rm /tmp/jadx.zip \
+    && ln -s /opt/jadx/bin/jadx /usr/local/bin/jadx
+
+# Install frida-tools
+RUN pip3 install frida-tools frida
+
+# Final stage
+FROM ubuntu:22.04
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    openjdk-11-jre \
+    python3 \
+    python3-pip \
+    adb \
+    file \
+    unzip \
+    git \
+    wget \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+RUN pip3 install --no-cache-dir flask flask-cors flask-socketio
+
+# Copy tool from builder
+COPY --from=builder /usr/local/bin/apktool.jar /usr/local/bin/
+COPY --from=builder /opt/jadx /opt/jadx
+COPY --from=builder /tmp/apk-reverse-tool /opt/apk-reverse-tool
+
+# Create working directory
+WORKDIR /opt/apk-reverse-tool
+
+# Create directories
+RUN mkdir -p /workspace/uploads \
+    /workspace/analyses \
+    /workspace/output \
+    /workspace/temp
+
+# Setup environment
+ENV PATH="/opt/jadx/bin:$PATH"
+ENV PYTHONPATH="/opt/apk-reverse-tool:$PYTHONPATH"
+ENV ANDROID_HOME="/opt/android-sdk"
+
+# Copy API server
+COPY api-server /opt/apk-reverse-tool/api-server
+RUN chmod +x /opt/apk-reverse-tool/apk-reverse-tool.sh
+
+# Expose API port
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+# Start API server
+CMD ["python3", "api-server/server.py"]

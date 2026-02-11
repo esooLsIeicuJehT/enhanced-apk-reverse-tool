@@ -1,0 +1,20 @@
+1:version: '3.8'
+3:services:
+5:  apk-tool:
+6:    build:
+7:      context: .
+8:      dockerfile: Dockerfile.main-tool
+9:    container_name: apk-reverse-tool
+10:    ports:
+11:      - "8080:8080"
+12:    volumes:
+13:      - ./uploads:/workspace/uploads
+14:      - ./analyses:/workspace/analyses
+15:      - ./output:/output/output
+16:      - ./temp:/workspace/temp
+17:    environment:
+26:    restart: unless-stopped
+27:    healthcheck:
+28:      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+29:      interval: 30s
+30:      timeout: 10s

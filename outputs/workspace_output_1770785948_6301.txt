@@ -1,0 +1,5 @@
+) : AndroidViewModel<Application>(application) {
+
+    private val _devices = MutableLiveData<List<DeviceInfo>>()
+    val devices: LiveData<List<DeviceInfo>> = _devices
+

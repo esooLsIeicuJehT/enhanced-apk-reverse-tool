@@ -1,0 +1,36 @@
+[main 345a5f2] Complete mobile app implementation and add documentation
+ Committer: root <root@172.16.216.49>
+Your name and email address were configured automatically based
+on your username and hostname. Please check that they are accurate.
+You can suppress this message by setting them explicitly:
+
+    git config --global user.name "Your Name"
+    git config --global user.email you@example.com
+
+After doing this, you may fix the identity used for this commit with:
+
+    git commit --amend --reset-author
+
+ 23 files changed, 1821 insertions(+), 1 deletion(-)
+ create mode 100644 INTEGRATION_GUIDE.md
+ create mode 100644 TROUBLESHOOTING.md
+ create mode 100644 android-companion/app/src/main/java/com/apktool/companion/services/WebSocketService.kt
+ create mode 100644 android-companion/app/src/main/java/com/apktool/companion/ui/AnalysisResultsActivity.kt
+ create mode 100644 android-companion/app/src/main/java/com/apktool/companion/ui/UploadActivity.kt
+ create mode 100644 outputs/workspace_output_1770785077_8763.txt
+ create mode 100644 outputs/workspace_output_1770785079_785.txt
+ create mode 100644 outputs/workspace_output_1770785082_3971.txt
+ create mode 100644 outputs/workspace_output_1770785085_6278.txt
+ create mode 100644 outputs/workspace_output_1770785531_2070.txt
+ create mode 100644 outputs/workspace_output_1770785533_9348.txt
+ create mode 100644 outputs/workspace_output_1770785538_3758.txt
+ create mode 100644 outputs/workspace_output_1770785540_6145.txt
+ create mode 100644 outputs/workspace_output_1770785565_5559.txt
+ create mode 100644 outputs/workspace_output_1770785569_4836.txt
+ create mode 100644 outputs/workspace_output_1770785574_4097.txt
+ create mode 100644 outputs/workspace_output_1770785578_1869.txt
+ create mode 100644 outputs/workspace_output_1770785584_5364.txt
+ create mode 100644 outputs/workspace_output_1770785653_7165.txt
+ create mode 100644 outputs/workspace_output_1770785657_1732.txt
+ create mode 100644 outputs/workspace_output_1770785661_957.txt
+ create mode 100644 outputs/workspace_output_1770785664_6530.txt

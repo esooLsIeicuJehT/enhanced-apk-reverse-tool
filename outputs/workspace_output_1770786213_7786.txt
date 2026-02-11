@@ -1,0 +1,3 @@
+      "$SNAPCRAFT_PART_INSTALL/opt/apk-reverse-tool/venv/bin/pip" install --upgrade pip
+      "$SNAP:CRAFT_PART_INSTALL/opt/apk-reverse-tool/venv/bin/pip" install flask flask-cors flask-socketio
+      # Download and install apktool

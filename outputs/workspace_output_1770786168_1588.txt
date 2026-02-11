@@ -1,0 +1,17 @@
+30:install="${pkgname}.install"
+48:    pip install --upgrade pip
+49:    pip install flask flask-cors flask-socketio websocket-client requests pyyaml
+66:    install -d "${pkgdir}/opt/${pkgname}"
+67:    install -d "${pkgdir}/usr/bin"
+68:    install -install -d "${pkgdir}/var/lib/${pkgname}"
+69:    install -d "${pkgdir}/var/log/${pkgname}"
+70:    install -d "${pkgdir}/etc/${pkgname}"
+71:    install -d "${pkgdir}/usr/share/doc/${pkgname}"
+72:    install -d "${pkgdir}/usr/share/applications"
+73:    install -d "${pkgdir}/usr/lib/systemd/system"
+86:    install -Dm0644 "${srcdir}/${pkgname}.service" \
+90:    install -Dm0644 "${srcdir}/${pkgname}.desktop" \
+94:    install -Dm0644 "README.md" "${pkgdir}/usr/share/doc/${pkgname}/README.md"
+95:    install -Dm0644 "CHANGELOG.md" "${pkgdir}/usr/share/doc/${pkgname}/CHANGELOG.md"
+98:    install -Dm0644 "config.json" "${pkgdir}/etc/${pkgname}/config.json"
+101:    install -Dm0644 "LICENSE" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"

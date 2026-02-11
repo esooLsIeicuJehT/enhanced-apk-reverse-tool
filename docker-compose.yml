@@ -1,33 +1,70 @@
 version: '3.8'
 
 services:
-  # Main APK Analysis Service
-  apk-reverse-tool:
-    build: .
+  # Main APK Reverse Engineering Tool
+  apk-tool:
+    build:
+      context: .
+      dockerfile: Dockerfile.main-tool
     container_name: apk-reverse-tool
     ports:
       - "8080:8080"
     volumes:
-      - ./apks:/app/apks:ro          # APK files to analyze (read-only)
-      - ./reports:/app/reports        # Analysis reports
-      - ./logs:/app/logs              # Log files
-      - ./configs:/app/configs        # Configuration files
-      - android-sdk:/opt/android-sdk  # Persist Android SDK
+      - ./uploads:/workspace/uploads
+      - ./analyses:/workspace/analyses
+      - ./output:/output/output
+      - ./temp:/workspace/temp
     environment:
-      - APK_REVERSE_TOOL_LOG_LEVEL=INFO
-      - ANDROID_HOME=/opt/android-sdk
-      - JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
-    networks:
-      - apk-network
+      - FLASK_ENV=production
+      - FLASK_DEBUG=0
+      - API_HOST=0.0.0.0
+      - API_PORT=8080
+      - MAX_UPLOAD_SIZE=1073741824
+      - MAX_ANALYSIS_TIME=3600
+      - LOG_LEVEL=INFO
+      - WORKERS=4
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "/app/apk-reverse-tool.sh", "--version"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    networks:
+      - apk-tool-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
 
-  # Redis for caching and session management
+  # Web Interface (PWA)
+  web-interface:
+    build:
+      context: ./web-interface
+      dockerfile: Dockerfile
+    container_name: apk-web-interface
+    ports:
+      - "3000:80"
+    environment:
+      - REACT_APP_API_URL=http://apk-tool:8080
+      - REACT_APP_WEBSOCKET_URL=ws://apk-tool:8080
+    depends_on:
+      - apk-tool
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - apk-tool-network
+
+  # Redis for caching
   redis:
     image: redis:7-alpine
     container_name: apk-redis
@@ -35,34 +72,54 @@ services:
       - "6379:6379"
     volumes:
       - redis-data:/data
-    networks:
-      - apk-network
-    restart: unless-stopped
     command: redis-server --appendonly yes
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - apk-tool-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
 
-  # PostgreSQL for storing analysis results
+  # PostgreSQL for analysis results
   postgres:
-    image: postgres:14-alpine
+    image: postgres:15-alpine
     container_name: apk-postgres
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_DB=apk_analysis
-      - POSTGRES_USER=apkuser
-      - POSTGRES_PASSWORD=apkpass123
+      - POSTGRES_USER=apktool
+      - POSTGRES_PASSWORD=apktool123
+      - POSTGRES_DB=apktool_db
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
-    networks:
-      - apk-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U apkuser -d apk_analysis"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: ["CMD-SHELL", "pg_isready -U apktool"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - apk-tool-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
 
-  # Nginx reverse proxy for web interface
+  # Nginx reverse proxy
   nginx:
     image: nginx:alpine
     container_name: apk-nginx
@@ -72,107 +129,69 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro
-      - ./reports:/var/www/reports:ro
     depends_on:
-      - apk-reverse-tool
-    networks:
-      - apk-network
+      - apk-tool
+      - web-interface
     restart: unless-stopped
-
-  # Web interface (Optional - for future web UI)
-  web-ui:
-    build:
-      context: ./web-ui
-      dockerfile: Dockerfile
-    container_name: apk-web-ui
-    ports:
-      - "3000:3000"
-    environment:
-      - REACT_APP_API_URL=http://localhost:8080
-      - REACT_APP_REDIS_URL=redis://redis:6379
-    depends_on:
-      - apk-reverse-tool
-      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
     networks:
-      - apk-network
-    restart: unless-stopped
+      - apk-tool-network
 
-  # Worker for background analysis tasks
-  apk-worker:
-    build: .
-    container_name: apk-worker
-    volumes:
-      - ./apks:/app/apks:ro
-      - ./reports:/app/reports
-      - ./configs:/app/configs
-      - android-sdk:/opt/android-sdk
-    environment:
-      - APK_REVERSE_TOOL_MODE=worker
-      - REDIS_URL=redis://redis:6379
-      - POSTGRES_URL=postgresql://apkuser:apkpass123@postgres:5432/apk_analysis
-    depends_on:
-      - redis
-      - postgres
-    networks:
-      - apk-network
-    restart: unless-stopped
-    command: ["python3", "/app/scripts/worker.py"]
-
-  # Monitoring with Prometheus (Optional)
+  # Monitoring with Prometheus
   prometheus:
     image: prom/prometheus:latest
     container_name: apk-prometheus
     ports:
       - "9090:9090"
     volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/etc/prometheus/console_libraries'
       - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=200h'
       - '--web.enable-lifecycle'
+    restart: unless:stopped
     networks:
-      - apk-network
-    restart: unless-stopped
+      - apk-tool-network
 
-  # Grafana for visualization (Optional)
+  # Grafana for visualization
   grafana:
     image: grafana/grafana:latest
     container_name: apk-grafana
     ports:
       - "3001:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin123
     volumes:
       - grafana-data:/var/lib/grafana
-      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
-      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SERVER_ROOT_URL=http://localhost:3001
     depends_on:
       - prometheus
-    networks:
-      - apk-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-S", "-O", "/dev/null", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+     retries: 3
+      start_period: 40s
+    networks:
+      - apk-tool-network
 
-# Named volumes for persistence
-volumes:
-  android-sdk:
-    driver: local
-  redis-data:
-    driver: local
-  postgres-data:
-    driver: local
-  prometheus-data:
-    driver: local
-  grafana-data:
-    driver: local
-
-# Networks
 networks:
-  apk-network:
+  apk-tool-network:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
+
+volumes:
+  redis-data:
+  postgres-data:
+  prometheus-data:
+  grafana-data:

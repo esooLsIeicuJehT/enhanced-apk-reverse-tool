@@ -1,0 +1,2 @@
+771 apk-reverse-tool.sh
+bash: line 4: /execute:: No such file or directory

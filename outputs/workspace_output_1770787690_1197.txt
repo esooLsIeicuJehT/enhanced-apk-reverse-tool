@@ -1,0 +1,9 @@
+# - APK Tool API (http://localhost:8080)
+# - Web Interface (http://:3000)
+# - Redis Cache (port 6379)
+# - PostgreSQL (port 5432)
+# - Nginx Proxy (http://localhost)
+# - Prometheus Monitoring (http://localhost:9090)
+# - Grafana (http://:3001)
+```
+

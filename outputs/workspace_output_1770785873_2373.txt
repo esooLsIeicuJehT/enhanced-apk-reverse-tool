@@ -1,0 +1,11 @@
+    private val viewModel: DeviceManagementViewModel by viewModels()
+    private lateinit var deviceAdapter: DeviceAdapter
+
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val allGranted = permissions.values.all敏all { it }
+        if (allGranted) {
+            refreshDevices()
+        } else {
+            Toast.makeText(this, "Permissions denied", Toast.LENGTH_SHORT).show()

@@ -1,0 +1,82 @@
+#!/bin/bash
+
+set -e
+
+# Create necessary directories
+mkdir -p /opt/apk-reverse-tool
+mkdir -p /var/lib/apk-reverse-tool
+mkdir -p /var/log/apk-reverse-tool
+mkdir -p /etc/apk-reverse-tool
+mkdir -p /usr/local/bin
+
+# Set up Python virtual environment
+if [ ! -d "/opt/apk-reverse-tool/venv" ]; then
+    python3 -m venv /opt/apk-reverse-tool/venv
+fi
+
+# Activate virtual environment
+source /opt/apk-reverse-tool/venv/bin/activate
+
+# Install Python dependencies
+pip install --upgrade pip
+pip install flask flask-cors flask-socketio websocket-client requests pyyaml
+
+# Download and install tools
+# Install apktool
+if [ ! -f "/usr/local/bin/apktool.jar" ]; then
+    wget -O /usr/local/bin/apktool.jar https://github.com/iBotPeaches/Apktool/releases/download/v2.8.1/apktool_2.8.1.jar
+    chmod +x /usr/local/bin/apktool.jar
+fi
+
+# Install jadx (if not already installed)
+if [ ! -d "/opt/jadx" ]; then
+    cd /tmp
+    wget https://github.com/skylot/jadx/releases/download/v1.4.7/jadx-1.4.7.zip
+    unzip jadx-1.4.7.zip -d /opt/jadx
+    rm -f jadx-1.4.7.zip
+    ln -sf /opt/jadx/bin/jadx /usr/local/bin/jadx
+fi
+
+# Create systemd service file
+cat > /etc/systemd/system/apk-reverse-tool.service << EOF
+[Unit]
+Description=Enhanced APK Reverse Engineering Tool API Server
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/apk-reverse-tool
+ExecStart=/opt/apk-reverse-tool/venv/bin/python /opt/apk-reverse-tool/api-server/server.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Reload systemd and enable service
+systemctl daemon-reload
+systemctl enable apk-reverse-tool.service
+
+# Create desktop shortcut (if running desktop)
+if [ -d "/usr/share/applications" ]; then
+    cat > /usr/share/applications/apk-reverse-tool.desktop << EOF
+[Desktop Entry]
+Version=2.0.0
+Name=Enhanced APK Reverse Engineering Tool
+Comment=Advanced APK analysis and reverse engineering tool
+Exec=/opt/apk-reverse-tool/apk-reverse-tool.sh
+Icon=apk-reverse-tool
+Terminal=true
+Type=Application
+Categories=Development;Security;
+EOF
+fi
+
+echo "Installation complete!"
+echo "Start the API server with: systemctl start apk-reverse-tool"
+echo "Or use the CLI tool directly with: apk-reverse-tool"
+
+exit 0

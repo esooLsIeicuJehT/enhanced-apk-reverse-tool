@@ -1,0 +1,3 @@
+252:analyze_apk() {
+708:            analyze_apk "$apk_name" "--basic"
+727:            analyze_apk "$@"

@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -e
+
+# Stop and disable systemd service if it's running
+if systemctl is-active --quiet apk-reverse-tool.service; then
+    systemctl stop apk-reverse-tool.service
+    systemctl disable apk-reverse-tool.service
+fi
+
+exit 0

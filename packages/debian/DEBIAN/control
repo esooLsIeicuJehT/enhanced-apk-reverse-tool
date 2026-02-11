@@ -1,0 +1,25 @@
+Package: apk-reverse-tool
+Version: 2.0.0-1
+Architecture: amd64
+Maintainer: APK Tool Team <dev@apktool.com>
+Depends: python3, python3-pip, python3-venv, openjdk-11-jre, adb, git, wget, curl, unzip, python3-flask, python3-flask-cors, python3-flask-socketio
+Recommends: jadx, apktool, frida-tools
+Section: development
+Priority: optional
+Homepage: https://github.com/esooLsIeicuJehT/enhanced-apk-reverse-tool
+Description: Enhanced APK Reverse Engineering Tool
+ A comprehensive tool for reverse engineering Android APKs with features:
+  - Security analysis and vulnerability scanning
+  - OWASP Mobile Top 10 compliance checking
+  - Malware detection using machine learning
+  - Certificate and permission analysis
+  - Code analysis and decompilation
+  - Interactive command-line interface
+  - REST API for remote access
+  - Real-time WebSocket updates
+  - Plugin system for extensibility
+ .
+ This tool provides enterprise-grade APK analysis capabilities for security
+ researchers, penetration testers, and mobile application developers.
+
+Installed-Size: 1048576

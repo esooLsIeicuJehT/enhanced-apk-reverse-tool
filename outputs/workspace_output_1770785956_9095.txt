@@ -1,0 +1,6 @@
+            android:key="export_data"
+            android:title="Export Data"
+            android:summary="Export analysis results and settings" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Advanced">

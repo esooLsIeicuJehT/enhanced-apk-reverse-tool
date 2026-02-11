@@ -1,0 +1,1 @@
+        val allGranted = permissions.values.all { it }

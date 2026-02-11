@@ -1,0 +1,11 @@
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-S", "-O", "/dev/null", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+     :retries: 3
+      start_period: 40s
+    networks:
+      -apk-tool-network
+
+networks:
+  apk-tool-network:
