@@ -29,7 +29,10 @@
 #   - Certificate analysis
 #   - Permission analysis
 #   - Code obfuscation detection
-#   - Anti-tampering detection
+#   - Anti-taming detection
+#   - OWASP Mobile Top 10 vulnerability scanner
+#   - ML-based malware detection
+#   - Advanced security features
 #
 # SUBCOMMANDS
 #   pull     Pull an apk from device/emulator with device compatibility check
@@ -281,6 +284,16 @@ analyze_apk() {
     # Security analysis
     if [[ "$ENABLE_DEEP_ANALYSIS" == "true" ]]; then
         perform_security_analysis "$apk_file" "$report_file"
+    fi
+    
+    # OWASP vulnerability scanning
+    if [[ "$ENABLE_OWASP_SCAN" == "true" ]]; then
+        run_owasp_scan "$apk_file" "$report_file"
+    fi
+    
+    # ML-based malware detection
+    if [[ "$ENABLE_MALWARE_DETECTION" == "true" ]]; then
+        run_malware_detection "$apk_file" "$report_file"
     fi
     
     # Vulnerability scanning

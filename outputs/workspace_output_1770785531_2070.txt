@@ -1,0 +1,1 @@
+bash: line 3: apk-reverse-tool.sh: command not found

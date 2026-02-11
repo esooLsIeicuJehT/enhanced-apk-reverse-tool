@@ -1,0 +1,8 @@
+           "dangerous_count": '"${#dangerous_perms[@]}"'
+       }' "$report_file" > "$temp_file" && mv "$temp_file" "$report_file"
+    
+    log "WARN" "Found ${#dangerous_perms[@]} dangerous permissions"
+    log "INFO" "Permission analysis completed"
+}
+
+# Perform security analysis

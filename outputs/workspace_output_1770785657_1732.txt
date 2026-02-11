@@ -1,0 +1,23 @@
+Unstaged changes after reset:
+M	apk-reverse-tool.sh
+A  INTEGRATION_GUIDE.md
+A  TROUBLESHOOTING.md
+A  android-companion/app/src/main/java/com/apktool/companion/services/WebSocketService.kt
+A  android-companion/app/src/main/java/com/apktool/companion/ui/AnalysisResultsActivity.kt
+A  android-companion/app/src/main/java/com/apktool/companion/ui/UploadActivity.kt
+M  apk-reverse-tool.sh
+A  outputs/workspace_output_1770785077_8763.txt
+A  outputs/workspace_output_1770785079_785.txt
+A  outputs/workspace_output_1770785082_3971.txt
+A  outputs/workspace_output_1770785085_6278.txt
+A  outputs/workspace_output_1770785531_2070.txt
+A  outputs/workspace_output_1770785533_9348.txt
+A  outputs/workspace_output_1770785538_3758.txt
+A  outputs/workspace_output_1770785540_6145.txt
+A  outputs/workspace_output_1770785565_5559.txt
+A  outputs/workspace_output_1770785569_4836.txt
+A  outputs/workspace_output_1770785574_4097.txt
+A  outputs/workspace_output_1770785578_1869.txt
+A  outputs/workspace_output_1770785584_5364.txt
+A  outputs/workspace_output_1770785653_7165.txt
+A  outputs/workspace_output_1770785657_1732.txt
