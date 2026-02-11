@@ -1,0 +1,25 @@
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+	modified:   README.md
+	new file:   install-dependencies-windows.ps1
+	modified:   install-dependencies.sh
+	modified:   outputs/workspace_output_1770447471_4487.txt
+	new file:   outputs/workspace_output_1770447477_4911.txt
+	new file:   outputs/workspace_output_1770447485_9495.txt
+	new file:   outputs/workspace_output_1770447492_7283.txt
+	new file:   outputs/workspace_output_1770451091_1870.txt
+	new file:   outputs/workspace_output_1770451093_4440.txt
+	new file:   outputs/workspace_output_1770451097_1168.txt
+	new file:   outputs/workspace_output_1770451110_4925.txt
+	new file:   outputs/workspace_output_1770451122_2816.txt
+	new file:   outputs/workspace_output_1770452046_5135.txt
+	new file:   outputs/workspace_output_1770452348_6933.txt
+	new file:   outputs/workspace_output_1770452352_9973.txt
+	new file:   outputs/workspace_output_1770452393_4415.txt
+	new file:   outputs/workspace_output_1770452396_2916.txt
+	new file:   outputs/workspace_output_1770452419_784.txt
+	modified:   todo.md
+

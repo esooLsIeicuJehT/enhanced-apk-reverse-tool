@@ -1,1 +1,62 @@
 Reinitialized existing Git repository in /workspace/.git/
+On branch master
+
+No commits yet
+
+Changes to be committed:
+  (use "git rm --cached <file>..." to unstage)
+	new file:   .agent_hooks/run_all_hooks.py
+	new file:   .agent_hooks/shutdown/00_track_processes_on_ports.py
+	new file:   .agent_hooks/shutdown/_readme.txt
+	new file:   .agent_hooks/startup/_readme.txt
+	new file:   CHANGELOG.md
+	new file:   Dockerfile
+	new file:   LICENSE
+	new file:   QUICK-START.txt
+	new file:   README.md
+	new file:   android-companion/README.md
+	new file:   android-companion/app/build.gradle
+	new file:   api-server/server.py
+	new file:   apk-reverse-tool.sh
+	new file:   demo.sh
+	new file:   docker-compose.yml
+	new file:   docs/API-REFERENCE.md
+	new file:   docs/FRIDA-NO-ROOT-GUIDE.md
+	new file:   enhanced-apk-reverse-tool-v2.0.zip
+	new file:   examples/frida-no-root-demo.sh
+	new file:   examples/sample-analysis.sh
+	new file:   install-dependencies.sh
+	new file:   outputs/workspace_output_1767092544_3666.txt
+	new file:   outputs/workspace_output_1767092552_5673.txt
+	new file:   outputs/workspace_output_1767092569_7985.txt
+	new file:   outputs/workspace_output_1767092617_3934.txt
+	new file:   outputs/workspace_output_1767092619_7164.txt
+	new file:   outputs/workspace_output_1767092640_2307.txt
+	new file:   outputs/workspace_output_1767092697_7928.txt
+	new file:   outputs/workspace_output_1767092817_6959.txt
+	new file:   outputs/workspace_output_1767092820_3816.txt
+	new file:   outputs/workspace_output_1767092823_2632.txt
+	new file:   outputs/workspace_output_1767092831_3136.txt
+	new file:   outputs/workspace_output_1767092834_8533.txt
+	new file:   outputs/workspace_output_1767092836_4628.txt
+	new file:   outputs/workspace_output_1767093202_6887.txt
+	new file:   outputs/workspace_output_1767093206_2838.txt
+	new file:   outputs/workspace_output_1767093214_1368.txt
+	new file:   outputs/workspace_output_1767093219_2644.txt
+	new file:   outputs/workspace_output_1767093224_53.txt
+	new file:   outputs/workspace_output_1767093230_3600.txt
+	new file:   outputs/workspace_output_1767093232_4290.txt
+	new file:   outputs/workspace_output_1770447455_2213.txt
+	new file:   outputs/workspace_output_1770447458_4348.txt
+	new file:   outputs/workspace_output_1770447463_2397.txt
+	new file:   outputs/workspace_output_1770447468_4059.txt
+	new file:   outputs/workspace_output_1770447471_4487.txt
+	new file:   requirements.txt
+	new file:   summarized_conversations/original_conversation_1770447441_3153.txt
+	new file:   todo.md
+	new file:   web-interface/README.md
+	new file:   web-interface/package.json
+	new file:   web-interface/public/index.html
+	new file:   web-interface/public/manifest.json
+	new file:   "\342\200\234api-server"
+

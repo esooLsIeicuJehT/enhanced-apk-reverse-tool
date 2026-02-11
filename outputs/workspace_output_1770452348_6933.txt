@@ -1,0 +1,100 @@
+# Enhanced APK Reverse Engineering Tool v2.0
+
+A comprehensive, enhanced version of the popular `apk.sh` tool with advanced reverse engineering capabilities, security analysis, and device compatibility features.
+
+## 🚀 Features
+
+### Core Functionality (Enhanced from original apk.sh)
+- **APK Pulling** - Pull APKs from Android devices with split APK support
+- **Decoding** - Decode APKs using apktool with enhanced options
+- **Building** - Rebuild APKs with validation and error checking
+- **Patching** - Inject Frida gadgets and other runtime analysis tools
+- **Package Renaming** - Rename APK packages with dependency resolution
+
+### 🆕 New Advanced Features
+- **🔍 Comprehensive Security Analysis**
+  - Certificate analysis and validation
+  - Permission categorization (dangerous, normal, signature)
+  - Security vulnerability scanning
+  - Debug mode detection
+  - Hardcoded secret detection
+
+- **📱 Device Compatibility**
+  - Automatic device compatibility checking
+  - Architecture detection and validation
+  - Android version compatibility analysis
+  - Multi-device support
+
+- **🛡️ Enhanced Security Features**
+  - Anti-tampering detection
+  - Code obfuscation analysis
+  - Network security configuration analysis
+  - Backup and restore functionality
+
+- **📊 Advanced Analysis**
+  - Interactive mode with guided workflow
+  - JSON-based reporting with detailed metrics
+  - Automated vulnerability scanning
+  - Code structure analysis
+
+- **🔧 Developer Tools**
+  - Plugin system for extensibility
+  - Enhanced logging and debugging
+  - Multiple output formats (JSON, XML, text)
+  - Configuration management
+
+### 📱 Android & Web Integration
+- **📱 Android Companion App** - Native Android app for remote control of analysis tool
+- **🌐 Mobile Web Interface** - Progressive Web App accessible from any Android browser
+- **🔌 Cross-Platform API** - Unified REST API supporting both mobile and web clients
+- **⚡ Real-time Analysis** - Live progress tracking via WebSocket connections
+- **📱 Mobile Upload** - Upload APKs directly from Android devices
+- **📊 Mobile Reports** - View analysis results optimized for mobile screens
+- **🔔 Push Notifications** - Get analysis completion alerts on your device
+
+## 📋 Requirements
+
+### System Requirements
+- Linux (Ubuntu/Debian recommended)
+- Java 11 or higher
+- Python 3.7+
+- 2GB+ RAM
+- 1GB+ disk space
+
+### Automatic Installation
+Use the included installation script to install all dependencies:
+
+```bash
+# Run as root or with sudo
+sudo ./install-dependencies.sh
+```
+
+### Manual Dependencies
+If you prefer manual installation, ensure you have:
+
+#### Core Tools
+- `wget`, `curl`, `unzip`, `zip`
+- `openjdk-11-jdk`
+- `python3`, `pip3`
+- `jq` (for JSON processing)
+
+#### Android Tools
+- `adb` (Android Debug Bridge)
+- `apktool` v2.8.1+
+- `aapt` (Android Asset Packaging Tool)
+- `apksigner`, `zipalign`
+
+#### Analysis Tools
+- `jadx` (Java decompiler)
+- `androguard` (Python APK analysis)
+- `frida-tools` (Runtime analysis)
+
+## 🚀 Quick Start
+
+### 1. Installation
+```bash
+# Clone or download the tool
+git clone <repository-url>
+cd apk-reverse-tool
+
+# Make executable

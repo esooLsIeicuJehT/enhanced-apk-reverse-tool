@@ -1,0 +1,23 @@
+Unstaged changes after reset:
+M	outputs/workspace_output_1770447471_4487.txt
+M  README.md
+A  install-dependencies-windows.ps1
+M  install-dependencies.sh
+ M outputs/workspace_output_1770447471_4487.txt
+M  todo.md
+?? outputs/workspace_output_1770447477_4911.txt
+?? outputs/workspace_output_1770447485_9495.txt
+?? outputs/workspace_output_1770447492_7283.txt
+?? outputs/workspace_output_1770451091_1870.txt
+?? outputs/workspace_output_1770451093_4440.txt
+?? outputs/workspace_output_1770451097_1168.txt
+?? outputs/workspace_output_1770451110_4925.txt
+?? outputs/workspace_output_1770451122_2816.txt
+?? outputs/workspace_output_1770452046_5135.txt
+?? outputs/workspace_output_1770452348_6933.txt
+?? outputs/workspace_output_1770452352_9973.txt
+?? outputs/workspace_output_1770452393_4415.txt
+?? outputs/workspace_output_1770452396_2916.txt
+?? outputs/workspace_output_1770452419_784.txt
+?? outputs/workspace_output_1770452423_1111.txt
+?? outputs/workspace_output_1770452426_2254.txt

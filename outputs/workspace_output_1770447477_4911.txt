@@ -1,0 +1,68 @@
+[master (root-commit) 29950c2] Initial commit: Enhanced APK Reverse Engineering Tool v2.0
+ Committer: root <root@172.16.185.133>
+Your name and email address were configured automatically based
+on your username and hostname. Please check that they are accurate.
+You can suppress this message by setting them explicitly:
+
+    git config --global user.name "Your Name"
+    git config --global user.email you@example.com
+
+After doing this, you may fix the identity used for this commit with:
+
+    git commit --amend --reset-author
+
+ 54 files changed, 8767 insertions(+)
+ create mode 100755 .agent_hooks/run_all_hooks.py
+ create mode 100755 .agent_hooks/shutdown/00_track_processes_on_ports.py
+ create mode 100644 .agent_hooks/shutdown/_readme.txt
+ create mode 100644 .agent_hooks/startup/_readme.txt
+ create mode 100644 CHANGELOG.md
+ create mode 100644 Dockerfile
+ create mode 100644 LICENSE
+ create mode 100644 QUICK-START.txt
+ create mode 100644 README.md
+ create mode 100644 android-companion/README.md
+ create mode 100644 android-companion/app/build.gradle
+ create mode 100644 api-server/server.py
+ create mode 100755 apk-reverse-tool.sh
+ create mode 100755 demo.sh
+ create mode 100644 docker-compose.yml
+ create mode 100644 docs/API-REFERENCE.md
+ create mode 100644 docs/FRIDA-NO-ROOT-GUIDE.md
+ create mode 100644 enhanced-apk-reverse-tool-v2.0.zip
+ create mode 100755 examples/frida-no-root-demo.sh
+ create mode 100755 examples/sample-analysis.sh
+ create mode 100755 install-dependencies.sh
+ create mode 100644 outputs/workspace_output_1767092544_3666.txt
+ create mode 100644 outputs/workspace_output_1767092552_5673.txt
+ create mode 100644 outputs/workspace_output_1767092569_7985.txt
+ create mode 100644 outputs/workspace_output_1767092617_3934.txt
+ create mode 100644 outputs/workspace_output_1767092619_7164.txt
+ create mode 100644 outputs/workspace_output_1767092640_2307.txt
+ create mode 100644 outputs/workspace_output_1767092697_7928.txt
+ create mode 100644 outputs/workspace_output_1767092817_6959.txt
+ create mode 100644 outputs/workspace_output_1767092820_3816.txt
+ create mode 100644 outputs/workspace_output_1767092823_2632.txt
+ create mode 100644 outputs/workspace_output_1767092831_3136.txt
+ create mode 100644 outputs/workspace_output_1767092834_8533.txt
+ create mode 100644 outputs/workspace_output_1767092836_4628.txt
+ create mode 100644 outputs/workspace_output_1767093202_6887.txt
+ create mode 100644 outputs/workspace_output_1767093206_2838.txt
+ create mode 100644 outputs/workspace_output_1767093214_1368.txt
+ create mode 100644 outputs/workspace_output_1767093219_2644.txt
+ create mode 100644 outputs/workspace_output_1767093224_53.txt
+ create mode 100644 outputs/workspace_output_1767093230_3600.txt
+ create mode 100644 outputs/workspace_output_1767093232_4290.txt
+ create mode 100644 outputs/workspace_output_1770447455_2213.txt
+ create mode 100644 outputs/workspace_output_1770447458_4348.txt
+ create mode 100644 outputs/workspace_output_1770447463_2397.txt
+ create mode 100644 outputs/workspace_output_1770447468_4059.txt
+ create mode 100644 outputs/workspace_output_1770447471_4487.txt
+ create mode 100644 requirements.txt
+ create mode 100644 summarized_conversations/original_conversation_1770447441_3153.txt
+ create mode 100644 todo.md
+ create mode 100644 web-interface/README.md
+ create mode 100644 web-interface/package.json
+ create mode 100644 web-interface/public/index.html
+ create mode 100644 web-interface/public/manifest.json
+ create mode 100644 "\342\200\234api-server"

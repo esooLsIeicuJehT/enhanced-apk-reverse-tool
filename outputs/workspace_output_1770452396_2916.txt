@@ -1,0 +1,52 @@
+## 🚀 Quick Start
+
+### 1. Installation
+```bash
+# Clone or download the tool
+git clone <repository-url>
+cd apk-reverse-tool
+
+# Make executable
+chmod +x apk-reverse-tool.sh
+
+# Install dependencies (recommended)
+sudo ./install-dependencies.sh
+```
+
+### 2. Basic Usage
+
+#### Interactive Mode (Recommended for beginners)
+```bash
+./apk-reverse-tool.sh interactive
+```
+
+#### Pull APK from Device
+```bash
+# Basic pull
+./apk-reverse-tool.sh pull com.example.app
+
+# With device compatibility check
+./apk-reverse-tool.sh pull com.example.app --device-compat
+```
+
+#### Comprehensive Analysis
+```bash
+# Full analysis
+./apk-reverse-tool.sh analyze app.apk
+
+# Deep security analysis
+./apk-reverse-tool.sh analyze app.apk --deep-analysis
+
+# Export to specific format
+./apk-reverse-tool.sh analyze app.apk --format json --output analysis_report
+```
+
+## 📖 Detailed Usage
+
+### Command Structure
+```bash
+./apk-reverse-tool.sh [COMMAND] [OPTIONS] [ARGUMENTS]
+```
+
+### Available Commands
+

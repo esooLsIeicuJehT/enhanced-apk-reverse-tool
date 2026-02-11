@@ -1,0 +1,15 @@
+[main 532018a] Add cross-platform support for installation
+ Committer: root <root@172.16.185.133>
+Your name and email address were configured automatically based
+on your username and hostname. Please check that they are accurate.
+You can suppress this message by setting them explicitly:
+
+    git config --global user.name "Your Name"
+    git config --global user.email you@example.com
+
+After doing this, you may fix the identity used for this commit with:
+
+    git commit --amend --reset-author
+
+ 4 files changed, 890 insertions(+), 218 deletions(-)
+ create mode 100644 install-dependencies-windows.ps1

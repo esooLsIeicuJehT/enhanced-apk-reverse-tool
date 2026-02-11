@@ -1,69 +1,121 @@
 {
-  "short_name": "APK Analyzer",
+  "short_name": "APK Tool",
   "name": "Enhanced APK Reverse Engineering Tool",
-  "description": "Mobile-optimized APK security analysis platform",
+  "description": "Mobile-optimized web interface for comprehensive APK analysis",
   "icons": [
     {
-      "src": "favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
+      "src": "icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "maskable any"
     },
     {
-      "src": "logo192.png",
+      "src": "icon-96x96.png",
+      "sizes": "96x96",
       "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable "any"
+    },
+    {
+      "src": "icon-192x192.png",
       "sizes": "192x192",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "maskable any"
     },
     {
-      "src": "logo512.png",
+      "src": "icon-384x384.png",
+      "sizes": "384x384",
       "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icon-512x512.png",
       "sizes": "512x512",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "maskable any"
     }
   ],
-  "start_url": ".",
+  "start_url": "/",
   "display": "standalone",
-  "theme_color": "#1976d2",
-  "background_color": "#ffffff",
   "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#2196F3",
   "scope": "/",
-  "lang": "en",
-  "categories": ["security", "tools", "developer"],
+  "categories": ["tools", "security", "development"],
   "shortcuts": [
     {
       "name": "Upload APK",
       "short_name": "Upload",
-      "description": "Upload APK for analysis",
+      "description": "Upload an APK for analysis",
       "url": "/upload",
-      "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "icon-96x96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
     },
     {
-      "name": "Analysis History",
-      "short_name": "History",
-      "description": "View analysis history",
-      "url": "/history",
-      "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "screenshot-mobile.png",
-      "sizes": "360x640",
-      "type": "image/png",
-      "form_factor": "narrow"
+      "name": "name":": "My Analyses",
+      "short_name": "Analyses",
+      "description": "View previous analyses",
+      "url": "/analyses",
+      "icons": [
+        {
+          "src": "icon-96x96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
     },
     {
-      "src": "screenshot-desktop.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide"
+      "name": "Devices",
+      "short_name": "Devices",
+      "description": "Manage connected devices",
+      "url": "/devices",
+      "icons": [
+        {
+          "src": "icon-96x96.png",
+          "type": "image/png",
+          "sizes": "96x96"
+        }
+      ]
     }
   ],
-  "related_applications": [
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "protocol_handlers": [],
+  "file_handlers": [
     {
-      "platform": "play",
-      "url": "https://play.google.com/store/apps/details?id=com.apkreverse.tool",
-      "id": "com.apkreverse.tool"
+      "action": "/upload",
+      "accept": {
+        "application/vnd.android.package-archive": [".apk"]
+      },
+      "icons": [
+        {
+          "src": "icon-96x96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }

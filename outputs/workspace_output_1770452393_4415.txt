@@ -1,0 +1,20 @@
+5:## 🚀 Features
+7:### Core Functionality (Enhanced from original apk.sh)
+14:### 🆕 New Advanced Features
+46:### 📱 Android & Web Integration
+55:## 📋 Requirements
+57:### Supported Platforms
+63:### System Requirements
+70:### Automatic Installation
+72:#### Linux (Debian/Ubuntu)
+77:#### Linux (Fedora/RHEL)
+83:#### Linux (Arch Linux)
+89:#### macOS
+96:#### Windows (Native PowerShell)
+102:#### Windows (WSL)
+109:### Manual Dependencies
+112:#### Core Tools
+118:#### Android Tools
+124:#### Analysis Tools
+129:## 🚀 Quick Start
+131:### 1. Installation
