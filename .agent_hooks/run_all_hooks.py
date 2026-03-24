@@ -65,14 +65,11 @@ def run_all_hooks(hook_type: str):
     Args:
         hook_type (str): The type of hook to run
     """
-    # Check if the hook directory exists and is a directory
     hook_dir = BASE_DIR / hook_type
     if not hook_dir.exists() or not hook_dir.is_dir():
         raise FileNotFoundError(f"Hooks for type {hook_type} in directory {hook_dir} do not exist")
-    # Create log directory if it doesn't exist
     log_dir = hook_dir / LOG_DIR_NAME
     log_dir.mkdir(parents=True, exist_ok=True)
-    # Run all hooks in the hook directory
     for hook in sorted(hook_dir.glob("*.py")):
         if hook.name.startswith("_"):
             continue
