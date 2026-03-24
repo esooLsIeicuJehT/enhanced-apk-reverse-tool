@@ -119,6 +119,13 @@ class OWASPScanner:
         self.vulnerabilities: List[Vulnerability] = []
         self.manifest_data: Dict[str, Any] = {}
         self.source_files: List[str] = []
+        self._compiled_patterns: Dict[str, re.Pattern] = {}
+        self._compile_patterns()
+
+    def _compile_patterns(self):
+        """Pre-compile regex patterns for better performance"""
+        for name, data in self.PATTERNS.items():
+            self._compiled_patterns[name] = re.compile(data["pattern"], re.IGNORECASE)
         
     def scan(self) -> Dict[str, Any]:
         """
@@ -285,9 +292,9 @@ class OWASPScanner:
     
     def _scan_file_content(self, content: str, location: str):
         """Scan file content for vulnerability patterns"""
-        for pattern_name, pattern_data in self.PATTERNS.items():
-            pattern = pattern_data["pattern"]
-            matches = re.finditer(pattern, content, re.IGNORECASE)
+        for pattern_name, compiled_pattern in self._compiled_patterns.items():
+            pattern_data = self.PATTERNS[pattern_name]
+            matches = compiled_pattern.finditer(content)
             
             for match in matches:
                 # Create vulnerability for each match
