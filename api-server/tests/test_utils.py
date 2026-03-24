@@ -32,6 +32,7 @@ from server import allowed_file
 # Properly inject MockConfig into the server module
 class MockConfig:
     ALLOWED_EXTENSIONS = {'apk'}
+    JWT_SECRET_KEY = 'test_secret_key'
 
 server.Config = MockConfig
 
