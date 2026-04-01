@@ -205,18 +205,22 @@ class OWASPScanner:
     
     def _parse_aapt_output(self, output: str):
         """Parse aapt dump badging output"""
-        self.manifest_data["package_name"] = self._extract_value(output, "package:")
-        self.manifest_data["version_code"] = self._extract_value(output, "versionCode")
-        self.manifest["version_name"] = self._extract_value(output, "versionName")
+        self.manifest_data["package_name"] = self._extract_value(output, "package: name=")
+        self.manifest_data["version_code"] = self._extract_value(output, "versionCode=")
+        self.manifest_data["version_name"] = self._extract_value(output, "versionName=")
         self.manifest_data["sdk_version"] = self._extract_value(output, "sdkVersion:")
-        self.manifest_data["target_sdk"] = self._extract_value("targetorten", "targetSdkVersion:")
+        self.manifest_data["target_sdk"] = self._extract_value(output, "targetSdkVersion:")
         self.manifest_data["permissions"] = self._extract_permissions(output)
     
     def _extract_value(self, output: str, key: str) -> str:
         """Extract value from aapt output"""
-        pattern = rf'{key}([\'"])?([^\'"\s]+)\1'
+        # Matches either a quoted value or an unquoted sequence of non-whitespace characters
+        pattern = rf'{key}\s*(?:([\'"])(.*?)\1|([^\s\'"]+))'
         match = re.search(pattern, output)
-        return match.group(2) if match else "N/A"
+        if match:
+            # If quoted, value is in group 2. If unquoted, value is in group 3.
+            return match.group(2) if match.group(2) is not None else match.group(3)
+        return "N/A"
     
     def _extract_permissions(self, output: str) -> List[str]:
         """Extract permissions from aapt output"""
@@ -411,8 +415,8 @@ class OWASPScanner:
     def _count_exported_components(self) -> int:
         """Count exported components"""
         try:
-            cmd = ["aapt", "dump", "badging", "str", "self.apk_path"]
-            result = subprocess.run(cmd, capture_output=True, text="text")
+            cmd = ["aapt", "dump", "badging", str(self.apk_path)]
+            result = subprocess.run(cmd, capture_output=True, text=True)
             return result.stdout.count("exported='true'")
         except Exception:
             return 0
