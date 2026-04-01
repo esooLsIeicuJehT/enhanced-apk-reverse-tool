@@ -78,6 +78,8 @@ os.makedirs(Config.RESULTS_FOLDER, exist_ok=True)
 analysis_queue = Queue()
 active_analyses = {}
 user_sessions = {}
+username_to_id = {}
+email_to_id = {}
 
 # Data models
 @dataclass
@@ -240,9 +242,8 @@ def register():
             return jsonify({'error': 'Missing required fields'}), 400
         
         # Check if user already exists
-        for session in user_sessions.values():
-            if session['user'].email == email or session['user'].username == username:
-                return jsonify({'error': 'User already exists'}), 409
+        if username in username_to_id or email in email_to_id:
+            return jsonify({'error': 'User already exists'}), 409
         
         # Create new user
         user = User(
@@ -257,6 +258,8 @@ def register():
             'user': user,
             'analyses': []
         }
+        username_to_id[username] = user.id
+        email_to_id[email] = user.id
         
         token = generate_jwt_token(user.id)
         
@@ -285,10 +288,9 @@ def login():
         
         # Find user
         user = None
-        for session in user_sessions.values():
-            if session['user'].username == username:
-                user = session['user']
-                break
+        user_id = username_to_id.get(username)
+        if user_id and user_id in user_sessions:
+            user = user_sessions[user_id]['user']
         
         if not user or not check_password_hash(user.password_hash, password):
             return jsonify({'error': 'Invalid credentials'}), 401
