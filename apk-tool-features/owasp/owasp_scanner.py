@@ -120,6 +120,7 @@ class OWASPScanner:
         self.manifest_data: Dict[str, Any] = {}
         self.source_files: List[str] = []
         self._compiled_patterns: Dict[str, re.Pattern] = {}
+        self._seen_vulnerabilities = set()
         self._compile_patterns()
 
     def _compile_patterns(self):
@@ -244,6 +245,7 @@ class OWASPScanner:
                     "Use ProGuard/R8 to obfuscate code"
                 ]
             ))
+            self._seen_vulnerabilities.add(("debug_mode", "AndroidManifest.xml"))
         
         # Check for exported activities
         exported_count = self._count_exported_components()
@@ -262,6 +264,7 @@ class OWASPScanner:
                     "Use intent filters carefully"
                 ]
             ))
+            self._seen_vulnerabilities.add(("exported_activities", "AndroidManifest.xml"))
         
         # Check for allowBackup
         if self._is_backup_enabled():
@@ -278,6 +281,7 @@ class OWASPScanner:
                     "Use secure backup mechanisms"
                 ]
             ))
+            self._seen_vulnerabilities.add(("backup_enabled", "AndroidManifest.xml"))
     
     def _scan_source_code_vulnerabilities(self):
         """Scan source code for security patterns"""
@@ -307,15 +311,11 @@ class OWASPScanner:
                         pattern_name, pattern_data, location, match
                     )
                     self.vulnerabilities.append(vulnerability)
+                    self._seen_vulnerabilities.add((pattern_name, location))
     
     def _should_create_vulnerability(self, pattern_name: str, location: str) -> bool:
         """Determine if vulnerability should be created"""
-        # Deduplicate similar vulnerabilities
-        for existing in self.vulnerabilities:
-            if pattern_name in existing.title.lower() and \
-               location in str(existing.location):
-                return False
-        return True
+        return (pattern_name, location) not in self._seen_vulnerabilities
     
     def _create_vulnerability(
         self,
