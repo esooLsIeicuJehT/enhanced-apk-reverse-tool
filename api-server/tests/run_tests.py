@@ -50,6 +50,7 @@ class MockConfig:
     JWT_EXPIRATION_HOURS = 24
     UPLOAD_FOLDER = 'uploads'
     RESULTS_FOLDER = 'results'
+    CORS_ALLOWED_ORIGINS = ['http://localhost:3000']
 
 server.Config = MockConfig
 from server import User, register, login
