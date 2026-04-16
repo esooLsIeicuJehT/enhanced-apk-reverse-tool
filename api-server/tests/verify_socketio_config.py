@@ -29,11 +29,28 @@ def test_socketio_config():
         with open(server_path, 'r') as f:
             content = f.read()
 
+        errors = []
         if 'allow_unsafe_werkzeug=True' in content:
-            print("VULNERABILITY_FOUND: allow_unsafe_werkzeug=True is present in server.py")
+            errors.append("allow_unsafe_werkzeug=True is present in server.py")
+
+        if 'cors_allowed_origins="*"' in content:
+            errors.append('cors_allowed_origins="*" is present in server.py')
+
+        if 'origins="*"' in content:
+            errors.append('origins="*" is present in server.py')
+
+        if not 'cors_allowed_origins=Config.CORS_ALLOWED_ORIGINS' in content:
+            errors.append('cors_allowed_origins=Config.CORS_ALLOWED_ORIGINS is missing in server.py')
+
+        if not 'origins=Config.CORS_ALLOWED_ORIGINS' in content:
+            errors.append('origins=Config.CORS_ALLOWED_ORIGINS is missing in server.py')
+
+        if errors:
+            for error in errors:
+                print(f"VULNERABILITY_FOUND: {error}")
             sys.exit(1)
         else:
-            print("VULNERABILITY_FIXED: allow_unsafe_werkzeug=True is not present in server.py")
+            print("VULNERABILITY_FIXED: CORS is restricted and allow_unsafe_werkzeug=True is not present.")
             sys.exit(0)
 
 if __name__ == "__main__":

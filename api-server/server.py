@@ -59,16 +59,17 @@ class Config:
     ALLOWED_EXTENSIONS = {'apk'}
     JWT_EXPIRATION_HOURS = 24
     ANALYSIS_TIMEOUT = 3600  # 1 hour
+    CORS_ALLOWED_ORIGINS = [o.strip() for o in os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:3000').split(',')]
 
 # Initialize Flask app
 app = Flask(__name__)
 app.config.from_object(Config)
 
 # Enable CORS
-CORS(app, origins="*")
+CORS(app, origins=Config.CORS_ALLOWED_ORIGINS)
 
 # Initialize SocketIO
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+socketio = SocketIO(app, cors_allowed_origins=Config.CORS_ALLOWED_ORIGINS, async_mode='threading')
 
 # Ensure directories exist
 os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
