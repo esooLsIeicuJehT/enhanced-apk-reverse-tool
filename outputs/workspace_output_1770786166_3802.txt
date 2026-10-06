@@ -1,4 +1,0 @@
-build() {
-    cd "${pkgname}-${pkgver}"
-    
-bash: line 4: /execute:: No such file or directory

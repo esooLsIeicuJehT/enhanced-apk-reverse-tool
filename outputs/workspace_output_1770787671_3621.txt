@@ -1,5 +1,0 @@
-### macOS
-
-#### Using Homebrew
-```bash
-# Tap|brew tap
