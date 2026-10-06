@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   backend:
-    name: Backend and shell
+    name: Backend, scanners, and shell
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -40,8 +40,8 @@ jobs:
           bash -n install-dependencies.sh
           bash -n demo.sh
 
-      - name: Run API tests
-        run: pytest -q api-server/tests
+      - name: Run tests
+        run: pytest -q api-server/tests apk-tool-features/tests
 
   frontend:
     name: Web build
@@ -55,8 +55,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: npm
-          cache-dependency-path: web-interface/package.json
 
       - name: Install dependencies
         run: npm install --no-audit --no-fund
