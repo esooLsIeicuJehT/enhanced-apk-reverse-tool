@@ -2,7 +2,7 @@ services:
   apk-tool:
     build:
       context: .
-      dockerfile: Dockerfile.main-tool
+      dockerfile: Dockerfile
     restart: unless-stopped
     environment:
       APP_ENV: production
