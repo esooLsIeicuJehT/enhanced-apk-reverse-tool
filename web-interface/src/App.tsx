@@ -24,17 +24,16 @@ const DEFAULT_OPTIONS: AnalysisOptions = {
 };
 
 const OPTION_LABELS: Record<keyof AnalysisOptions, string> = {
-  deep_analysis: 'Deep analysis',
-  vulnerability_scan: 'Vulnerability scan',
-  certificate_analysis: 'Certificate analysis',
-  permission_analysis: 'Permission analysis',
-  code_analysis: 'Code analysis',
-  owasp_scan: 'OWASP scan',
-  malware_detection: 'Malware detection',
+  deep_analysis: 'Deep analysis summary',
+  vulnerability_scan: 'OWASP finding summary',
+  certificate_analysis: 'Signing metadata',
+  permission_analysis: 'Permission inventory',
+  code_analysis: 'Package structure metrics',
+  owasp_scan: 'OWASP evidence scan',
+  malware_detection: 'Static risk indicators',
 };
 
 type AuthMode = 'login' | 'register';
-
 type Session = AuthResponse;
 
 function loadSession(): Session | null {
@@ -84,11 +83,8 @@ const App: React.FC = () => {
 
   const persistSession = (next: Session | null) => {
     setSession(next);
-    if (next) {
-      sessionStorage.setItem('apk-tool-session', JSON.stringify(next));
-    } else {
-      sessionStorage.removeItem('apk-tool-session');
-    }
+    if (next) sessionStorage.setItem('apk-tool-session', JSON.stringify(next));
+    else sessionStorage.removeItem('apk-tool-session');
   };
 
   const refreshHistory = async (authToken = token) => {
@@ -218,21 +214,13 @@ const App: React.FC = () => {
           <div className="brand-mark" aria-hidden="true">A</div>
           <p className="eyebrow">Enhanced APK Reverse Tool</p>
           <h1>APK analysis without the duct tape.</h1>
-          <p className="muted">Authenticate to upload an APK and run the server-side security analysis pipeline.</p>
+          <p className="muted">Authenticate to upload an APK and run evidence-based static analysis.</p>
 
           <div className="tab-row" role="tablist" aria-label="Authentication mode">
-            <button
-              type="button"
-              className={authMode === 'login' ? 'tab active' : 'tab'}
-              onClick={() => setAuthMode('login')}
-            >
+            <button type="button" className={authMode === 'login' ? 'tab active' : 'tab'} onClick={() => setAuthMode('login')}>
               Sign in
             </button>
-            <button
-              type="button"
-              className={authMode === 'register' ? 'tab active' : 'tab'}
-              onClick={() => setAuthMode('register')}
-            >
+            <button type="button" className={authMode === 'register' ? 'tab active' : 'tab'} onClick={() => setAuthMode('register')}>
               Create account
             </button>
           </div>
@@ -240,25 +228,12 @@ const App: React.FC = () => {
           <form onSubmit={submitAuth} className="stack">
             <label>
               Username
-              <input
-                autoComplete="username"
-                value={username}
-                onChange={(event) => setUsername(event.target.value)}
-                minLength={3}
-                maxLength={64}
-                required
-              />
+              <input autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} minLength={3} maxLength={64} required />
             </label>
             {authMode === 'register' && (
               <label>
                 Email
-                <input
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  required
-                />
+                <input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
               </label>
             )}
             <label>
@@ -377,9 +352,7 @@ const App: React.FC = () => {
               <p className="eyebrow">Durable history</p>
               <h2>Recent analyses</h2>
             </div>
-            <button type="button" className="secondary" onClick={() => void refreshHistory()}>
-              Refresh
-            </button>
+            <button type="button" className="secondary" onClick={() => void refreshHistory()}>Refresh</button>
           </div>
 
           <div className="history-list">
@@ -405,7 +378,7 @@ const App: React.FC = () => {
         <section className="panel result-panel">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Machine-readable report</p>
+              <p className="eyebrow">Evidence-bearing JSON report</p>
               <h2>Result</h2>
             </div>
           </div>
