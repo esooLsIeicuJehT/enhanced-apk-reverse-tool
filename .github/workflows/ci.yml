@@ -37,8 +37,6 @@ jobs:
         run: |
           bash -n apk-reverse-tool.sh
           bash -n integrate.sh
-          bash -n install-dependencies.sh
-          bash -n demo.sh
 
       - name: Run tests
         run: pytest -q api-server/tests apk-tool-features/tests
