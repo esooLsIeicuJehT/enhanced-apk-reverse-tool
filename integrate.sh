@@ -1,71 +1,89 @@
-#!/bin/bash
-# Integration script for OWASP and ML features
-# This file is sourced by the main tool to add the new analysis features
+#!/usr/bin/env bash
+# Evidence-based OWASP and static-risk feature integration for apk-reverse-tool.sh.
 
-# Run OWASP vulnerability scan
+INTEGRATION_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+_merge_json_section() {
+    local report_file="$1"
+    local section="$2"
+    local payload_file="$3"
+
+    if ! command -v jq >/dev/null 2>&1; then
+        log "WARN" "jq is unavailable; skipping merge of ${section} results"
+        return 0
+    fi
+
+    if ! jq -e . "$payload_file" >/dev/null 2>&1; then
+        log "ERROR" "${section} output is not valid JSON: $payload_file"
+        return 1
+    fi
+
+    local temp_file
+    temp_file="$(mktemp)"
+    if jq --arg section "$section" --slurpfile payload "$payload_file" \
+        '.[$section] = $payload[0]' "$report_file" > "$temp_file"; then
+        mv "$temp_file" "$report_file"
+    else
+        rm -f "$temp_file"
+        return 1
+    fi
+}
+
 run_owasp_scan() {
     local apk_file="$1"
     local report_file="$2"
-    
-    log "INFO" "Running OWASP Mobile Top 10 vulnerability scan..."
-    
-    if [[ ! -f "apk-tool-features/owasp/owasp_scanner.py" ]]; then
-        log "ERROR" "OWASP scanner not found at apk-tool-features/owasp/owasp_scanner.py"
+    local scanner="$INTEGRATION_ROOT/apk-tool-features/owasp/owasp_scanner.py"
+    local owasp_output="${apk_file%.apk}_owasp.json"
+
+    log "INFO" "Running evidence-based OWASP static checks..."
+
+    if [[ ! -f "$scanner" ]]; then
+        log "ERROR" "OWASP scanner not found: $scanner"
         return 1
     fi
-    
-    # Run OWASP scanner
-    local owasp_output="${apk_file%.apk}_owasp.json"
-    
-    if python3 "apk-tool-features/owasp/owasp_scanner.py" --apk "$apk_file" --output "$owasp_output" --format json; then
-        log "SUCCESS" "OWASP scan completed successfully"
-        
-        # Update main report
-        if command -v jq &> /dev/null; then
-            local temp_file=$(mktemp)
-            jq --argjson owasp "$(cat "$owasp_output")" '.owasp_results = $owasp' "$report_file" > "$temp_file"
-            mv "$temp_file" "$report_file"
-        fi
-    else
-        log "ERROR" "OWASP scan failed"
+
+    if python3 "$scanner" "$apk_file" --output "$owasp_output" --format json; then
+        _merge_json_section "$report_file" "owasp_results" "$owasp_output" || true
+        rm -f "$owasp_output"
+        log "SUCCESS" "OWASP static checks completed successfully"
+        return 0
     fi
-    
+
     rm -f "$owasp_output"
+    log "ERROR" "OWASP static checks failed"
+    return 1
 }
 
-# Run malware detection
-run_malware_detection() {
+run_risk_scan() {
     local apk_file="$1"
     local report_file="$2"
-    
-    log "INFO" "Running ML-based malware detection..."
-    
-    if [[ ! -f "apk-tool-features/ml/malware_detector.py" ]]; then
-        log "ERROR" "Malware detector not found at apk-tool-tool-features/ml/malware_detector.py"
+    local detector="$INTEGRATION_ROOT/apk-tool-features/risk/risk_detector.py"
+    local risk_output="${apk_file%.apk}_risk.json"
+
+    log "INFO" "Running static APK risk indicator scan..."
+
+    if [[ ! -f "$detector" ]]; then
+        log "ERROR" "Risk indicator scanner not found: $detector"
         return 1
     fi
-    
-    # Run malware detector
-    local ml_output="${apk_file%.apk}_malware.json"
-    
-    if python3 "apk-tool-features/ml/malware_detector.py" --apk "$apk_file" --output "$ml_output" --format json; then
-        log "SUCCESS" "Malware detection completed"
-        
-        # Update main report
-        if command -v jq &> /dev/null; then
-            local temp_file=$(mktemp)
-            jq --argjson malware "$(cat "$ml_output")' '.malware_results = $malware' "$report_file" > "$temp_file"
-            mv "$temp_file" "$report_file"
-        fi
-    else
-        log "ERROR" "Malware detection failed"
+
+    if python3 "$detector" "$apk_file" --output "$risk_output" --format json; then
+        _merge_json_section "$report_file" "risk_indicator_results" "$risk_output" || true
+        rm -f "$risk_output"
+        log "SUCCESS" "Static risk indicator scan completed"
+        return 0
     fi
-    
-    rm -f "$ml_output"
+
+    rm -f "$risk_output"
+    log "ERROR" "Static risk indicator scan failed"
+    return 1
 }
 
-# Enable OWASP and ML features by default
-ENABLE_OWASP_SCAN="true"
-ENABLE_MALWARE_DETECTION="true"
+# Backward-compatible function name for scripts that sourced older releases.
+run_malware_detection() {
+    log "WARN" "run_malware_detection is deprecated; running static risk indicators instead"
+    run_risk_scan "$@"
+}
 
-log "INFO" "OWASP scanner and ML malware detector integrated"
+ENABLE_OWASP_SCAN="${ENABLE_OWASP_SCAN:-true}"
+ENABLE_RISK_SCAN="${ENABLE_RISK_SCAN:-${ENABLE_MALWARE_DETECTION:-true}}"
