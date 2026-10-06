@@ -81,5 +81,3 @@ run_malware_detection() {
 
 ENABLE_OWASP_SCAN="${ENABLE_OWASP_SCAN:-true}"
 ENABLE_MALWARE_DETECTION="${ENABLE_MALWARE_DETECTION:-true}"
-
-log "INFO" "OWASP scanner and ML malware detector integrated"
