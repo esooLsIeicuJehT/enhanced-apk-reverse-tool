@@ -3,18 +3,18 @@ FROM ubuntu:24.04
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG APKTOOL_VERSION=2.8.1
-ARG JADX_VERSION=1.4.7
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     VIRTUAL_ENV=/opt/venv \
     DATA_DIR=/data \
     APP_ENV=production
-ENV PATH="${VIRTUAL_ENV}/bin:/opt/jadx/bin:${PATH}"
+ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         adb \
         aapt \
+        apksigner \
         ca-certificates \
         curl \
         file \
@@ -37,11 +37,7 @@ RUN "$VIRTUAL_ENV/bin/pip" install --no-cache-dir -r /app/requirements.txt
 
 RUN wget -q "https://github.com/iBotPeaches/Apktool/releases/download/v${APKTOOL_VERSION}/apktool_${APKTOOL_VERSION}.jar" -O /opt/apktool.jar \
     && printf '#!/usr/bin/env sh\nexec java -jar /opt/apktool.jar "$@"\n' > /usr/local/bin/apktool \
-    && chmod 0755 /usr/local/bin/apktool \
-    && wget -q "https://github.com/skylot/jadx/releases/download/v${JADX_VERSION}/jadx-${JADX_VERSION}.zip" -O /tmp/jadx.zip \
-    && mkdir -p /opt/jadx \
-    && unzip -q /tmp/jadx.zip -d /opt/jadx \
-    && rm -f /tmp/jadx.zip
+    && chmod 0755 /usr/local/bin/apktool
 
 COPY . /app
 
