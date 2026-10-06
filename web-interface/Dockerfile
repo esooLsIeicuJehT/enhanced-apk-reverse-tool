@@ -1,35 +1,20 @@
-# Multi-stage build for web interface
 FROM node:20-alpine AS builder
 
 WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-# Install dependencies
-RUN npm ci --only=production
-
-# Copy source code
-COPY . .
-
-# Build application
+COPY package.json ./
+RUN npm install --no-audit --no-fund
+COPY public ./public
+COPY src ./src
+COPY tsconfig.json ./tsconfig.json
 RUN npm run build
 
-# Production stage
-FROM nginx:alpine
-
-# Copy custom nginx config
+FROM nginxinc/nginx-unprivileged:1.27-alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Copy build artifacts from builder
 COPY --from=builder /app/build /usr/share/nginx/html
 
-# Expose port
-EXPOSE 80
+EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost/ || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD wget --quiet --spider http://127.0.0.1:8080/health || exit 1
 
-# Start nginx
 CMD ["nginx", "-g", "daemon off;"]
