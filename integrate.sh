@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# OWASP and ML feature integration for apk-reverse-tool.sh.
+# Evidence-based OWASP and static-risk feature integration for apk-reverse-tool.sh.
 
 INTEGRATION_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -35,49 +35,55 @@ run_owasp_scan() {
     local scanner="$INTEGRATION_ROOT/apk-tool-features/owasp/owasp_scanner.py"
     local owasp_output="${apk_file%.apk}_owasp.json"
 
-    log "INFO" "Running OWASP Mobile Top 10 vulnerability scan..."
+    log "INFO" "Running evidence-based OWASP static checks..."
 
     if [[ ! -f "$scanner" ]]; then
         log "ERROR" "OWASP scanner not found: $scanner"
         return 1
     fi
 
-    if python3 "$scanner" --apk "$apk_file" --output "$owasp_output" --format json; then
+    if python3 "$scanner" "$apk_file" --output "$owasp_output" --format json; then
         _merge_json_section "$report_file" "owasp_results" "$owasp_output" || true
         rm -f "$owasp_output"
-        log "SUCCESS" "OWASP scan completed successfully"
+        log "SUCCESS" "OWASP static checks completed successfully"
         return 0
     fi
 
     rm -f "$owasp_output"
-    log "ERROR" "OWASP scan failed"
+    log "ERROR" "OWASP static checks failed"
     return 1
 }
 
-run_malware_detection() {
+run_risk_scan() {
     local apk_file="$1"
     local report_file="$2"
-    local detector="$INTEGRATION_ROOT/apk-tool-features/ml/malware_detector.py"
-    local ml_output="${apk_file%.apk}_malware.json"
+    local detector="$INTEGRATION_ROOT/apk-tool-features/risk/risk_detector.py"
+    local risk_output="${apk_file%.apk}_risk.json"
 
-    log "INFO" "Running ML-based malware detection..."
+    log "INFO" "Running static APK risk indicator scan..."
 
     if [[ ! -f "$detector" ]]; then
-        log "ERROR" "Malware detector not found: $detector"
+        log "ERROR" "Risk indicator scanner not found: $detector"
         return 1
     fi
 
-    if python3 "$detector" --apk "$apk_file" --output "$ml_output" --format json; then
-        _merge_json_section "$report_file" "malware_results" "$ml_output" || true
-        rm -f "$ml_output"
-        log "SUCCESS" "Malware detection completed"
+    if python3 "$detector" "$apk_file" --output "$risk_output" --format json; then
+        _merge_json_section "$report_file" "risk_indicator_results" "$risk_output" || true
+        rm -f "$risk_output"
+        log "SUCCESS" "Static risk indicator scan completed"
         return 0
     fi
 
-    rm -f "$ml_output"
-    log "ERROR" "Malware detection failed"
+    rm -f "$risk_output"
+    log "ERROR" "Static risk indicator scan failed"
     return 1
 }
 
+# Backward-compatible function name for scripts that sourced older releases.
+run_malware_detection() {
+    log "WARN" "run_malware_detection is deprecated; running static risk indicators instead"
+    run_risk_scan "$@"
+}
+
 ENABLE_OWASP_SCAN="${ENABLE_OWASP_SCAN:-true}"
-ENABLE_MALWARE_DETECTION="${ENABLE_MALWARE_DETECTION:-true}"
+ENABLE_RISK_SCAN="${ENABLE_RISK_SCAN:-${ENABLE_MALWARE_DETECTION:-true}}"
