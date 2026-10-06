@@ -1,84 +1,61 @@
-# Multi-stage build for main APK Reverse Engineering Tool
-FROM ubuntu:22.04 AS builder
+# Production image for the APK analysis API.
+FROM ubuntu:24.04
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    python3 \
-    python3-pip \
-    openjdk-11-jdk \
-    git \
-    wget \
+ARG DEBIAN_FRONTEND=noninteractive
+ARG APKTOOL_VERSION=2.8.1
+ARG JADX_VERSION=1.4.7
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    VIRTUAL_ENV=/opt/venv \
+    DATA_DIR=/data \
+    APP_ENV=production
+ENV PATH="${VIRTUAL_ENV}/bin:/opt/jadx/bin:${PATH}"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        adb \
+        aapt \
+        ca-certificates \
+        curl \
+        file \
+        jq \
+        openjdk-17-jre-headless \
+        python3 \
+        python3-pip \
+        python3-venv \
+        unzip \
+        wget \
+        zip \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy tool files
-COPY . /tmp/apk-reverse-tool
-WORKDIR /tmp/apk-reverse-tool
+RUN python3 -m venv "$VIRTUAL_ENV" \
+    && "$VIRTUAL_ENV/bin/pip" install --no-cache-dir --upgrade pip setuptools wheel
 
-# Install Python dependencies
-RUN pip3 install --no-cache-dir -r requirements.txt
+WORKDIR /app
+COPY requirements.txt /app/requirements.txt
+RUN "$VIRTUAL_ENV/bin/pip" install --no-cache-dir -r /app/requirements.txt
 
-# Install apktool
-RUN wget https://github.com/iBotPeaches/Apktool/releases/download/v2.8.1/apktool_2.8.1.jar -O /usr/local/bin/apktool.jar \
-    && chmod +x /usr/local/bin/apktool.jar
+# Pin external analysis tools so builds are reproducible.
+RUN wget -q "https://github.com/iBotPeaches/Apktool/releases/download/v${APKTOOL_VERSION}/apktool_${APKTOOL_VERSION}.jar" -O /opt/apktool.jar \
+    && printf '#!/usr/bin/env sh\nexec java -jar /opt/apktool.jar "$@"\n' > /usr/local/bin/apktool \
+    && chmod 0755 /usr/local/bin/apktool \
+    && wget -q "https://github.com/skylot/jadx/releases/download/v${JADX_VERSION}/jadx-${JADX_VERSION}.zip" -O /tmp/jadx.zip \
+    && mkdir -p /opt/jadx \
+    && unzip -q /tmp/jadx.zip -d /opt/jadx \
+    && rm -f /tmp/jadx.zip
 
-# Install jadx
-RUN wget https://github.com/skylot/jadx/releases/download/v1.4.7/jadx-1.4.7.zip -O /tmp/jadx.zip \
-    && unzip /tmp/jadx.zip -d /opt/ \
-    && rm /tmp/jadx.zip \
-    && ln -s /opt/jadx/bin/jadx /usr/local/bin/jadx
+COPY . /app
 
-# Install frida-tools
-RUN pip3 install frida-tools frida
+RUN chmod 0755 /app/apk-reverse-tool.sh /app/integrate.sh \
+    && useradd --create-home --uid 10001 --shell /usr/sbin/nologin apktool \
+    && mkdir -p /data/uploads /data/results /data/work \
+    && chown -R apktool:apktool /app /data
 
-# Final stage
-FROM ubuntu:22.04
+USER apktool
 
-# Install runtime dependencies
-RUN apt-get update && apt-get install -y \
-    openjdk-11-jre \
-    python3 \
-    python3-pip \
-    adb \
-    file \
-    unzip \
-    git \
-    wget \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Python dependencies
-RUN pip3 install --no-cache-dir flask flask-cors flask-socketio
-
-# Copy tool from builder
-COPY --from=builder /usr/local/bin/apktool.jar /usr/local/bin/
-COPY --from=builder /opt/jadx /opt/jadx
-COPY --from=builder /tmp/apk-reverse-tool /opt/apk-reverse-tool
-
-# Create working directory
-WORKDIR /opt/apk-reverse-tool
-
-# Create directories
-RUN mkdir -p /workspace/uploads \
-    /workspace/analyses \
-    /workspace/output \
-    /workspace/temp
-
-# Setup environment
-ENV PATH="/opt/jadx/bin:$PATH"
-ENV PYTHONPATH="/opt/apk-reverse-tool:$PYTHONPATH"
-ENV ANDROID_HOME="/opt/android-sdk"
-
-# Copy API server
-COPY api-server /opt/apk-reverse-tool/api-server
-RUN chmod +x /opt/apk-reverse-tool/apk-reverse-tool.sh
-
-# Expose API port
 EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD curl --fail --silent http://127.0.0.1:8080/api/health >/dev/null || exit 1
 
-# Start API server
-CMD ["python3", "api-server/server.py"]
+CMD ["gunicorn", "--chdir", "api-server", "--workers", "1", "--threads", "8", "--bind", "0.0.0.0:8080", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-", "wsgi:app"]
