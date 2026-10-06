@@ -1,777 +1,515 @@
-#!/bin/bash
-#
-# Enhanced APK Reverse Engineering Tool v2.0
-# Based on apk.sh by ax (github.com/ax) with significant enhancements
-# Author: Enhanced by SuperNinja for comprehensive Android APK analysis
-#
-# -----------------------------------------------------------------------------
-#
-# SYNOPSIS
-#   apk-reverse-tool.sh [SUBCOMMAND] [APK FILE|APK DIR|PKG NAME] [FLAGS]
-#   apk-reverse-tool.sh pull [PKG NAME] [FLAGS]
-#   apk-reverse-tool.sh decode [APK FILE] [FLAGS]
-#   apk-reverse-tool.sh build [APK DIR] [FLAGS]
-#   apk-reverse-tool.sh patch [APK FILE] [FLAGS]
-#   apk-reverse-tool.sh rename [APK FILE] [PKG NAME] [FLAGS]
-#   apk-reverse-tool.sh analyze [APK FILE] [FLAGS]
-#   apk-reverse-tool.sh secure [APK FILE] [FLAGS]
-#   apk-reverse-tool.sh monitor [DEVICE_ID] [FLAGS]
-#
-# NEW FEATURES:
-#   - Comprehensive APK security analysis
-#   - Device compatibility checking
-#   - Automated vulnerability scanning
-#   - Interactive mode with guided workflow
-#   - Plugin system for extensibility
-#   - Enhanced logging and reporting
-#   - Backup and restore functionality
-#   - Real-time device monitoring
-#   - Certificate analysis
-#   - Permission analysis
-#   - Code obfuscation detection
-#   - Anti-taming detection
-#   - OWASP Mobile Top 10 vulnerability scanner
-#   - ML-based malware detection
-#   - Advanced security features
-#
-# SUBCOMMANDS
-#   pull     Pull an apk from device/emulator with device compatibility check
-#   decode   Decode an apk with enhanced analysis options
-#   build    Re-build an apk with validation
-#   patch    Patch an apk with multiple framework options
-#   rename   Rename the apk package with dependency resolution
-#   analyze  Comprehensive security and structure analysis
-#   secure   Apply security enhancements and patches
-#   monitor  Monitor device for APK changes and security events
-#   backup   Create backup of APK and analysis data
-#   restore  Restore from backup
-#
-# FLAGS
-#   -a, --arch <arch>              Specify target architecture
-#   -g, --gadget-conf <json_file>  Specify frida-gadget configuration
-#   -n, --net                      Add permissive network security config
-#   -r, --no-res                   Do not decode resources
-#   -s, --no-src                   Do not disassemble dex
-#   -v, --verbose                  Enable verbose output
-#   -i, --interactive              Enable interactive mode
-#   -o, --output <dir>             Specify output directory
-#   -f, --format <format>          Output format (json, xml, text)
-#   --deep-analysis                Enable deep security analysis
-#   --plugin <plugin_name>         Load specific plugin
-#   --backup                       Create backup before operations
-#   --device-compat                Check device compatibility
-#   --cert-analysis                Analyze certificates
-#   --perm-analysis                Analyze permissions
-#
-# -----------------------------------------------------------------------------
+#!/usr/bin/env bash
+# Enhanced APK Reverse Engineering Tool
+# Evidence-based APK metadata, structure, permission, OWASP-aligned, and risk-indicator analysis.
 
-VERSION="2.0"
+set -uo pipefail
+
+VERSION="2.1.0"
 TOOL_NAME="apk-reverse-tool"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LOG_FILE=""
 
-# Source OWASP and ML integration features
-if [[ -f "integrate.sh" ]]; then
-    source "integrate.sh"
-fi
-
-# Color codes for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
 WHITE='\033[1;37m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-# Enhanced logging function
 log() {
-    local level=$1
-    shift
+    local level="${1:-INFO}"
+    shift || true
     local message="$*"
-    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    
-    case $level in
-        "ERROR") echo -e "${RED}[ERROR]${NC} [$timestamp] $message" ;;
-        "WARN")  echo -e "${YELLOW}[WARN]${NC}  [$timestamp] $message" ;;
-        "INFO")  echo -e "${GREEN}[INFO]${NC}  [$timestamp] $message" ;;
-        "DEBUG") echo -e "${BLUE}[DEBUG]${NC} [$timestamp] $message" ;;
-        "SUCCESS") echo -e "${GREEN}[SUCCESS]${NC} [$timestamp] $message" ;;
-        *) echo -e "${WHITE}[LOG]${NC}   [$timestamp] $message" ;;
+    local timestamp
+    timestamp="$(date '+%Y-%m-%d %H:%M:%S')"
+
+    case "$level" in
+        ERROR) printf '%b[ERROR]%b [%s] %s\n' "$RED" "$NC" "$timestamp" "$message" ;;
+        WARN) printf '%b[WARN]%b  [%s] %s\n' "$YELLOW" "$NC" "$timestamp" "$message" ;;
+        DEBUG) printf '%b[DEBUG]%b [%s] %s\n' "$BLUE" "$NC" "$timestamp" "$message" ;;
+        SUCCESS) printf '%b[SUCCESS]%b [%s] %s\n' "$GREEN" "$NC" "$timestamp" "$message" ;;
+        *) printf '%b[INFO]%b  [%s] %s\n' "$GREEN" "$NC" "$timestamp" "$message" ;;
     esac
-    
-    # Also log to file if logging is enabled
+
     if [[ -n "$LOG_FILE" ]]; then
-        echo "[$timestamp] [$level] $message" >> "$LOG_FILE"
+        printf '[%s] [%s] %s\n' "$timestamp" "$level" "$message" >> "$LOG_FILE"
     fi
 }
 
-# Print banner
+if [[ -f "$SCRIPT_DIR/integrate.sh" ]]; then
+    # shellcheck source=integrate.sh
+    source "$SCRIPT_DIR/integrate.sh"
+else
+    log ERROR "Missing integration module: $SCRIPT_DIR/integrate.sh"
+    exit 1
+fi
+
+: "${ENABLE_DEEP_ANALYSIS:=false}"
+: "${ENABLE_VULNERABILITY_SCAN:=true}"
+: "${ENABLE_CERTIFICATE_ANALYSIS:=true}"
+: "${ENABLE_PERMISSION_ANALYSIS:=true}"
+: "${ENABLE_CODE_ANALYSIS:=true}"
+: "${ENABLE_OWASP_SCAN:=true}"
+: "${ENABLE_RISK_SCAN:=true}"
+: "${CREATE_BACKUPS:=false}"
+
 print_banner() {
-    echo -e "${CYAN}"
-    echo "╔══════════════════════════════════════════════════════════════╗"
-    echo "║                    $TOOL_NAME v$VERSION                    ║"
-    echo "║         Enhanced Android APK Reverse Engineering Tool        ║"
-    echo "║    Based on apk.sh by ax with comprehensive enhancements     ║"
-    echo "╚══════════════════════════════════════════════════════════════╝"
-    echo -e "${NC}"
+    printf '%b' "$CYAN"
+    cat <<EOF
+╔══════════════════════════════════════════════════════════════╗
+║              $TOOL_NAME v$VERSION              ║
+║        Evidence-based Android APK static analysis            ║
+╚══════════════════════════════════════════════════════════════╝
+EOF
+    printf '%b' "$NC"
 }
 
-# Initialize tool environment
-init_environment() {
-    log "INFO" "Initializing $TOOL_NAME v$VERSION..."
-    
-    # Set up home directory
-    APK_TOOL_HOME="${HOME}/.$TOOL_NAME"
-    mkdir -p "$APK_TOOL_HOME"
-    mkdir -p "$APK_TOOL_HOME/logs"
-    mkdir -p "$APK_TOOL_HOME/backups"
-    mkdir -p "$APK_TOOL_HOME/plugins"
-    mkdir -p "$APK_TOOL_HOME/configs"
-    mkdir -p "$APK_TOOL_HOME/reports"
-    
-    # Initialize log file
-    LOG_FILE="$APK_TOOL_HOME/logs/$(date +%Y%m%d_%H%M%S).log"
-    log "INFO" "Home directory: $APK_TOOL_HOME"
-    log "INFO" "Log file: $LOG_FILE"
-    
-    # Supported architectures
-    supported_arch=("arm" "x86_64" "x86" "arm64")
-    
-    # Load configuration
-    load_config
-    
-    # Check dependencies
-    check_dependencies
-    
-    log "SUCCESS" "Environment initialized successfully"
-}
-
-# Load configuration from file
 load_config() {
     local config_file="$APK_TOOL_HOME/configs/default.conf"
-    
     if [[ -f "$config_file" ]]; then
+        # shellcheck disable=SC1090
         source "$config_file"
-        log "INFO" "Configuration loaded from $config_file"
-    else
-        # Create default configuration
-        cat > "$config_file" << 'EOF'
-# Default Configuration for APK Reverse Engineering Tool
+        log INFO "Configuration loaded from $config_file"
+        return
+    fi
 
-# Tool Versions
-APKTOOL_VER="latest"
-FRIDA_VER="latest"
-BUILDTOOLS_VER="33.0.1"
-
-# Security Settings
+    cat > "$config_file" <<'EOF'
 ENABLE_DEEP_ANALYSIS=false
 ENABLE_VULNERABILITY_SCAN=true
 ENABLE_CERTIFICATE_ANALYSIS=true
 ENABLE_PERMISSION_ANALYSIS=true
-
-# Output Settings
-DEFAULT_OUTPUT_FORMAT="json"
-ENABLE_VERBOSITY=false
-CREATE_BACKUPS=true
-
-# Device Settings
-CHECK_DEVICE_COMPATIBILITY=true
-AUTO_DETECT_ARCH=true
-
-# Analysis Settings
-ENABLE_OBFUSCATION_DETECTION=true
-ENABLE_ANTI_TAMPERING_CHECK=true
 ENABLE_CODE_ANALYSIS=true
-
-# Plugin Settings
-LOAD_PLUGINS=true
-PLUGIN_DIR="$APK_TOOL_HOME/plugins"
+ENABLE_OWASP_SCAN=true
+ENABLE_RISK_SCAN=true
+CREATE_BACKUPS=false
 EOF
-        log "INFO" "Default configuration created at $config_file"
-        source "$config_file"
-    fi
+    log INFO "Default configuration created at $config_file"
 }
 
-# Enhanced dependency checking
-check_dependencies() {
-    log "INFO" "Checking dependencies..."
-    
-    local missing_deps=()
-    
-    # Check basic tools
-    for tool in wget unzip zip java; do
-        if ! command -v "$tool" &> /dev/null; then
-            missing_deps+=("$tool")
+require_commands() {
+    local missing=()
+    local command_name
+    for command_name in "$@"; do
+        if ! command -v "$command_name" >/dev/null 2>&1; then
+            missing+=("$command_name")
         fi
     done
-    
-    # Check Android tools
-    if ! command -v adb &> /dev/null; then
-        log "WARN" "ADB not found in PATH, will download if needed"
-    fi
-    
-    if ! command -v apktool &> /dev/null; then
-        log "WARN" "apktool not found in PATH, will download if needed"
-    fi
-    
-    if [[ ${#missing_deps[@]} -gt 0 ]]; then
-        log "ERROR" "Missing dependencies: ${missing_deps[*]}"
-        log "INFO" "Please install missing dependencies and try again"
-        exit 1
-    fi
-    
-    log "SUCCESS" "All dependencies checked"
-}
-
-# Device compatibility check
-check_device_compatibility() {
-    local device_id="$1"
-    
-    log "INFO" "Checking device compatibility..."
-    
-    # Get device information
-    local android_version=$(adb -s "$device_id" shell getprop ro.build.version.release 2>/dev/null || echo "unknown")
-    local api_level=$(adb -s "$device_id" shell getprop ro.build.version.sdk 2>/dev/null || echo "unknown")
-    local arch=$(adb -s "$device_id" shell getprop ro.product.cpu.abi 2>/dev/null || echo "unknown")
-    
-    log "INFO" "Device: $device_id"
-    log "INFO" "Android Version: $android_version (API $api_level)"
-    log "INFO" "Architecture: $arch"
-    
-    # Check compatibility
-    if [[ "$api_level" -lt 21 ]]; then
-        log "WARN" "Android version $android_version may have limited compatibility"
-    fi
-    
-    # Validate architecture
-    if [[ ! " ${supported_arch[*]} " =~ " ${arch} " ]]; then
-        log "ERROR" "Unsupported architecture: $arch"
+    if (( ${#missing[@]} > 0 )); then
+        log ERROR "Missing required commands: ${missing[*]}"
         return 1
     fi
-    
-    log "SUCCESS" "Device is compatible"
-    return 0
 }
 
-# Enhanced APK analysis
-analyze_apk() {
-    local apk_file="$1"
-    local analysis_options="$2"
-    
-    log "INFO" "Starting comprehensive APK analysis..."
-    
-    if [[ ! -f "$apk_file" ]]; then
-        log "ERROR" "APK file not found: $apk_file"
-        return 1
-    fi
-    
-    # Create analysis directory
-    local analysis_dir="${apk_file%.apk}_analysis"
-    mkdir -p "$analysis_dir"
-    
-    # Initialize analysis report
-    local report_file="$analysis_dir/analysis_report.json"
-    init_analysis_report "$report_file" "$apk_file"
-    
-    # Basic information extraction
-    extract_basic_info "$apk_file" "$report_file"
-    
-    # Certificate analysis
-    if [[ "$ENABLE_CERTIFICATE_ANALYSIS" == "true" ]]; then
-        analyze_certificates "$apk_file" "$report_file"
-    fi
-    
-    # Permission analysis
-    if [[ "$ENABLE_PERMISSION_ANALYSIS" == "true" ]]; then
-        analyze_permissions "$apk_file" "$report_file"
-    fi
-    
-    # Security analysis
-    if [[ "$ENABLE_DEEP_ANALYSIS" == "true" ]]; then
-        perform_security_analysis "$apk_file" "$report_file"
-    fi
-    
-    # OWASP vulnerability scanning
-    if [[ "$ENABLE_OWASP_SCAN" == "true" ]]; then
-        run_owasp_scan "$apk_file" "$report_file"
-    fi
-    
-    # ML-based malware detection
-    if [[ "$ENABLE_MALWARE_DETECTION" == "true" ]]; then
-        run_malware_detection "$apk_file" "$report_file"
-    fi
-    
-    # Vulnerability scanning
-    if [[ "$ENABLE_VULNERABILITY_SCAN" == "true" ]]; then
-        scan_vulnerabilities "$apk_file" "$report_file"
-    fi
-    
-    # Code analysis
-    if [[ "$ENABLE_CODE_ANALYSIS" == "true" ]]; then
-        analyze_code "$apk_file" "$report_file"
-    fi
-    
-    log "SUCCESS" "Analysis completed. Report saved to $report_file"
-}
+init_environment() {
+    local command_name="${1:-analyze}"
+    APK_TOOL_HOME="${HOME}/.$TOOL_NAME"
+    mkdir -p "$APK_TOOL_HOME/logs" "$APK_TOOL_HOME/configs" "$APK_TOOL_HOME/backups"
+    LOG_FILE="$APK_TOOL_HOME/logs/$(date +%Y%m%d_%H%M%S)_$$.log"
+    load_config
 
-# Initialize analysis report
-init_analysis_report() {
-    local report_file="$1"
-    local apk_file="$2"
-    
-    cat > "$report_file" << EOF
-{
-    "tool_info": {
-        "name": "$TOOL_NAME",
-        "version": "$VERSION",
-        "analysis_date": "$(date -Iseconds)",
-        "apk_file": "$apk_file"
-    },
-    "basic_info": {},
-    "certificate_analysis": {},
-    "permission_analysis": {},
-    "security_analysis": {},
-    "vulnerability_scan": {},
-    "code_analysis": {}
-}
-EOF
-}
-
-# Extract basic APK information
-extract_basic_info() {
-    local apk_file="$1"
-    local report_file="$2"
-    
-    log "INFO" "Extracting basic APK information..."
-    
-    # Use aapt to get basic info
-    local package_name=$(aapt dump badging "$apk_file" | grep "package: name=" | cut -d"'" -f2)
-    local version_name=$(aapt dump badging "$apk_file" | grep "versionName=" | cut -d"'" -f2)
-    local version_code=$(aapt dump badging "$apk_file" | grep "versionCode=" | cut -d"'" -f6)
-    local min_sdk=$(aapt dump badging "$apk_file" | grep "sdkVersion:" | cut -d"'" -f2)
-    local target_sdk=$(aapt dump badging "$apk_file" | grep "targetSdkVersion:" | cut -d"'" -f2)
-    
-    # Update report with basic info
-    local temp_file=$(mktemp)
-    jq --arg pkg "$package_name" \
-       --arg ver_name "$version_name" \
-       --arg ver_code "$version_code" \
-       --arg min_sdk "$min_sdk" \
-       --arg target_sdk "$target_sdk" \
-       '.basic_info = {
-           "package_name": $pkg,
-           "version_name": $ver_name,
-           "version_code": $ver_code,
-           "min_sdk": $min_sdk,
-           "target_sdk": $target_sdk
-       }' "$report_file" > "$temp_file" && mv "$temp_file" "$report_file"
-    
-    log "INFO" "Package: $package_name, Version: $version_name ($version_code)"
-}
-
-# Analyze certificates
-analyze_certificates() {
-    local apk_file="$1"
-    local report_file="$2"
-    
-    log "INFO" "Analyzing certificates..."
-    
-    # Extract APK to get certificate info
-    local temp_dir=$(mktemp -d)
-    unzip -q "$apk_file" -d "$temp_dir"
-    
-    if [[ -f "$temp_dir/META-INF/CERT.RSA" ]]; then
-        # Get certificate information
-        local cert_info=$(keytool -printcert -file "$temp_dir/META-INF/CERT.RSA" 2>/dev/null)
-        
-        # Extract key details
-        local issuer=$(echo "$cert_info" | grep "Issuer:" | cut -d: -f2- | xargs)
-        local subject=$(echo "$cert_info" | grep "Owner:" | cut -d: -f2- | xargs)
-        local valid_from=$(echo "$cert_info" | grep "Valid from:" | cut -d: -f2- | xargs)
-        local valid_until=$(echo "$cert_info" | grep "until:" | cut -d: -f3- | xargs)
-        local algorithm=$(echo "$cert_info" | grep "Signature algorithm:" | cut -d: -f2- | xargs)
-        
-        # Update report
-        local temp_file=$(mktemp)
-        jq --arg issuer "$issuer" \
-           --arg subject "$subject" \
-           --arg valid_from "$valid_from" \
-           --arg valid_until "$valid_until" \
-           --arg algorithm "$algorithm" \
-           '.certificate_analysis = {
-               "issuer": $issuer,
-               "subject": $subject,
-               "valid_from": $valid_from,
-               "valid_until": $valid_until,
-               "algorithm": $algorithm
-           }' "$report_file" > "$temp_file" && mv "$temp_file" "$report_file"
-    fi
-    
-    rm -rf "$temp_dir"
-    log "INFO" "Certificate analysis completed"
-}
-
-# Analyze permissions
-analyze_permissions() {
-    local apk_file="$1"
-    local report_file="$2"
-    
-    log "INFO" "Analyzing permissions..."
-    
-    # Extract permissions
-    local permissions=$(aapt dump permissions "$apk_file" | grep "uses-permission:" | cut -d= -f2 | tr -d "'" | sort)
-    
-    # Categorize permissions
-    local dangerous_perms=()
-    local normal_perms=()
-    local signature_perms=()
-    
-    while IFS= read -r perm; do
-        case $perm in
-            android.permission.READ_CONTACTS|android.permission.WRITE_CONTACTS|\
-            android.permission.READ_CALENDAR|android.permission.WRITE_CALENDAR|\
-            android.permission.CAMERA|android.permission.READ_EXTERNAL_STORAGE|\
-            android.permission.WRITE_EXTERNAL_STORAGE|android.permission.ACCESS_FINE_LOCATION|\
-            android.permission.ACCESS_COARSE_LOCATION|android.permission.RECORD_AUDIO|\
-            android.permission.READ_PHONE_STATE|android.permission.CALL_PHONE|\
-            android.permission.READ_SMS|android.permission.SEND_SMS|\
-            android.permission.RECEIVE_SMS|android.permission.ACCESS_WIFI_STATE)
-                dangerous_perms+=("$perm")
-                ;;
-            android.permission.*.SIGNATURE|android.permission.*.SIGNATURE*)
-                signature_perms+=("$perm")
-                ;;
-            *)
-                normal_perms+=("$perm")
-                ;;
-        esac
-    done <<< "$permissions"
-    
-    # Update report
-    local temp_file=$(mktemp)
-    jq --argjson dangerous "$(printf '%s\n' "${dangerous_perms[@]}" | jq -R . | jq -s .)" \
-       --argjson normal "$(printf '%s\n' "${normal_perms[@]}" | jq -R . | jq -s .)" \
-       --argjson signature "$(printf '%s\n' "${signature_perms[@]}" | jq -R . | jq -s .)" \
-       '.permission_analysis = {
-           "total": '"$((${#dangerous_perms[@]} + ${#normal_perms[@]} + ${#signature_perms[@]}))"',
-           "dangerous": $dangerous,
-           "normal": $normal,
-           "signature": $signature,
-           "dangerous_count": '"${#dangerous_perms[@]}"'
-       }' "$report_file" > "$temp_file" && mv "$temp_file" "$report_file"
-    
-    log "WARN" "Found ${#dangerous_perms[@]} dangerous permissions"
-    log "INFO" "Permission analysis completed"
-}
-
-# Perform security analysis
-perform_security_analysis() {
-    local apk_file="$1"
-    local report_file="$2"
-    
-    log "INFO" "Performing security analysis..."
-    
-    local security_issues=()
-    
-    # Check for debug mode
-    if aapt dump badging "$apk_file" | grep -q "application-debuggable=true"; then
-        security_issues+=("Application is debuggable")
-    fi
-    
-    # Check for allowBackup
-    if aapt dump badging "$apk_file" | grep -q "android:allowBackup='true'"; then
-        security_issues+=("Application allows backup")
-    fi
-    
-    # Check for network security config
-    if ! aapt dump badging "$apk_file" | grep -q "networkSecurityConfig"; then
-        security_issues+=("No network security configuration found")
-    fi
-    
-    # Update report
-    local temp_file=$(mktemp)
-    jq --argjson issues "$(printf '%s\n' "${security_issues[@]}" | jq -R . | jq -s .)" \
-       '.security_analysis = {
-           "issues_found": '"${#security_issues[@]}"',
-           "issues": $issues,
-           "risk_level": "'$((${#security_issues[@]} > 2 ? "HIGH" : ${#security_issues[@]} > 0 ? "MEDIUM" : "LOW"))'"
-       }' "$report_file" > "$temp_file" && mv "$temp_file" "$report_file"
-    
-    log "WARN" "Found ${#security_issues[@]} security issues"
-    log "INFO" "Security analysis completed"
-}
-
-# Scan for vulnerabilities
-scan_vulnerabilities() {
-    local apk_file="$1"
-    local report_file="$2"
-    
-    log "INFO" "Scanning for vulnerabilities..."
-    
-    local vulnerabilities=()
-    
-    # Check for common vulnerable libraries
-    local temp_dir=$(mktemp -d)
-    unzip -q "$apk_file" -d "$temp_dir"
-    
-    # Check for outdated libraries (simplified example)
-    if [[ -f "$temp_dir/classes.dex" ]]; then
-        # This would normally involve more sophisticated analysis
-        # For now, just check basic indicators
-        vulnerabilities+=("Consider checking for outdated dependencies")
-    fi
-    
-    # Check for hardcoded secrets (basic pattern matching)
-    if grep -r -i "api_key\|password\|secret" "$temp_dir" >/dev/null 2>&1; then
-        vulnerabilities+=("Potential hardcoded secrets detected")
-    fi
-    
-    # Update report
-    local temp_file=$(mktemp)
-    jq --argjson vulns "$(printf '%s\n' "${vulnerabilities[@]}" | jq -R . | jq -s .)" \
-       '.vulnerability_scan = {
-           "vulnerabilities_found": '"${#vulnerabilities[@]}"',
-           "vulnerabilities": $vulns,
-           "scan_date": "'$(date -Iseconds)'"
-       }' "$report_file" > "$temp_file" && mv "$temp_file" "$report_file"
-    
-    rm -rf "$temp_dir"
-    log "WARN" "Found ${#vulnerabilities[@]} potential vulnerabilities"
-    log "INFO" "Vulnerability scan completed"
-}
-
-# Analyze code
-analyze_code() {
-    local apk_file="$1"
-    local report_file="$2"
-    
-    log "INFO" "Analyzing code structure..."
-    
-    local code_analysis=()
-    
-    # This would normally involve decompiling and analyzing the code
-    # For now, provide basic structure analysis
-    
-    code_analysis+=("Code analysis requires decompilation")
-    code_analysis+=("Consider using jadx or jadx-gui for detailed code analysis")
-    
-    # Update report
-    local temp_file=$(mktemp)
-    jq --argjson analysis "$(printf '%s\n' "${code_analysis[@]}" | jq -R . | jq -s .)" \
-       '.code_analysis = {
-           "recommendations": $analysis,
-           "note": "Detailed code analysis requires additional decompilation tools"
-       }' "$report_file" > "$temp_file" && mv "$temp_file" "$report_file"
-    
-    log "INFO" "Code analysis completed"
-}
-
-# Create backup
-create_backup() {
-    local target="$1"
-    local backup_name="$2"
-    
-    if [[ "$CREATE_BACKUPS" != "true" ]]; then
-        return 0
-    fi
-    
-    log "INFO" "Creating backup: $backup_name"
-    
-    local backup_dir="$APK_TOOL_HOME/backups"
-    local backup_path="$backup_dir/$backup_name"
-    
-    mkdir -p "$backup_path"
-    
-    if [[ -f "$target" ]]; then
-        cp "$target" "$backup_path/"
-    elif [[ -d "$target" ]]; then
-        cp -r "$target" "$backup_path/"
-    else
-        log "ERROR" "Cannot backup: $target does not exist"
-        return 1
-    fi
-    
-    # Create backup metadata
-    cat > "$backup_path/backup_info.json" << EOF
-{
-    "backup_name": "$backup_name",
-    "original_path": "$target",
-    "backup_date": "$(date -Iseconds)",
-    "tool_version": "$VERSION"
-}
-EOF
-    
-    log "SUCCESS" "Backup created: $backup_path"
-}
-
-# Interactive mode
-interactive_mode() {
-    log "INFO" "Starting interactive mode..."
-    
-    while true; do
-        echo -e "\n${CYAN}=== $TOOL_NAME Interactive Mode ===${NC}"
-        echo "1. Pull APK from device"
-        echo "2. Decode APK"
-        echo "3. Analyze APK"
-        echo "4. Patch APK"
-        echo "5. Build APK"
-        echo "6. Security Analysis"
-        echo "7. Device Information"
-        echo "8. Exit"
-        echo -n "Please select an option (1-8): "
-        
-        read -r choice
-        
-        case $choice in
-            1) interactive_pull ;;
-            2) interactive_decode ;;
-            3) interactive_analyze ;;
-            4) interactive_patch ;;
-            5) interactive_build ;;
-            6) interactive_security ;;
-            7) interactive_device_info ;;
-            8) log "INFO" "Exiting interactive mode"; break ;;
-            *) log "ERROR" "Invalid option. Please try again." ;;
-        esac
-    done
-}
-
-# Interactive pull function
-interactive_pull() {
-    echo -e "\n${YELLOW}=== Pull APK from Device ===${NC}"
-    
-    # List connected devices
-    echo "Connected devices:"
-    adb devices | grep -v "List" | grep -v "^$"
-    
-    echo -n "Enter package name to pull: "
-    read -r package_name
-    
-    if [[ -n "$package_name" ]]; then
-        # Device compatibility check
-        local device_id=$(adb devices | grep -v "List" | grep -v "^$" | head -1 | cut -f1)
-        if check_device_compatibility "$device_id"; then
-            apk_pull_enhanced "$package_name"
-        fi
-    fi
-}
-
-# Enhanced APK pull function
-apk_pull_enhanced() {
-    local package="$1"
-    local build_opts="$2"
-    
-    log "INFO" "Pulling APK package: $package"
-    
-    # Check if device is connected
-    if ! adb devices | grep -q "device$"; then
-        log "ERROR" "No device connected"
-        return 1
-    fi
-    
-    # Get package path
-    local package_path=$(adb shell pm path "$package" 2>/dev/null | sed 's/\r//' | cut -d: -f2)
-    
-    if [[ -z "$package_path" ]]; then
-        log "ERROR" "Package $package not found on device"
-        return 1
-    fi
-    
-    # Create backup before pulling
-    if [[ "$CREATE_BACKUPS" == "true" ]]; then
-        create_backup "$package" "pull_$(date +%Y%m%d_%H%M%S)_$package"
-    fi
-    
-    # Count number of APKs
-    local num_apk=$(echo "$package_path" | wc -l)
-    
-    if [[ $num_apk -gt 1 ]]; then
-        # Handle split APKs
-        log "INFO" "Split APKs detected ($num_apk files)"
-        
-        local split_dir="${package}_split_apks"
-        mkdir -p "$split_dir"
-        
-        echo "$package_path" | while read -r path; do
-            log "INFO" "Pulling: $path"
-            adb pull "$path" "$split_dir/"
-        done
-        
-        # Combine split APKs (original logic would go here)
-        log "INFO" "Split APKs pulled to $split_dir"
-        log "WARN" "Split APK combination requires additional processing"
-        
-    else
-        # Single APK
-        log "INFO" "Pulling single APK from: $package_path"
-        adb pull "$package_path" .
-        local apk_name=$(basename "$package_path")
-        log "SUCCESS" "APK pulled: $apk_name"
-        
-        # Basic analysis
-        if command -v jq &> /dev/null; then
-            analyze_apk "$apk_name" "--basic"
-        fi
-    fi
-}
-
-# Main function - entry point
-main() {
-    # Initialize
-    init_environment
-    print_banner
-    
-    # Parse command line arguments
-    case "${1:-}" in
-        "pull")
-            shift
-            apk_pull_enhanced "$@"
+    case "$command_name" in
+        analyze)
+            require_commands aapt apktool jq python3 unzip || return 1
             ;;
-        "analyze")
-            shift
-            analyze_apk "$@"
-            ;;
-        "interactive"|"i")
-            interactive_mode
-            ;;
-        "help"|"-h"|"--help")
-            show_help
-            ;;
-        *)
-            show_help
-            exit 1
+        pull)
+            require_commands adb || return 1
             ;;
     esac
 }
 
-# Show help
+merge_json_section() {
+    local report_file="$1"
+    local section="$2"
+    local section_file="$3"
+    local temp_file
+    temp_file="$(mktemp)"
+
+    if ! jq -e . "$section_file" >/dev/null 2>&1; then
+        rm -f "$temp_file"
+        log ERROR "Generated $section data is not valid JSON"
+        return 1
+    fi
+
+    if jq --arg section "$section" --slurpfile data "$section_file" '.[$section] = $data[0]' \
+        "$report_file" > "$temp_file"; then
+        mv "$temp_file" "$report_file"
+        return 0
+    fi
+
+    rm -f "$temp_file"
+    return 1
+}
+
+init_analysis_report() {
+    local report_file="$1"
+    local apk_file="$2"
+    jq -n \
+        --arg name "$TOOL_NAME" \
+        --arg version "$VERSION" \
+        --arg date "$(date -Iseconds)" \
+        --arg apk "$apk_file" \
+        '{
+          schema_version: 2,
+          tool_info: {name: $name, version: $version, analysis_date: $date, apk_file: $apk},
+          basic_info: null,
+          certificate_analysis: null,
+          permission_analysis: null,
+          security_analysis: null,
+          vulnerability_scan: null,
+          code_analysis: null
+        }' > "$report_file"
+}
+
+extract_basic_info() {
+    local apk_file="$1"
+    local report_file="$2"
+    local section_file
+    section_file="$(mktemp)"
+
+    if ! python3 - "$apk_file" > "$section_file" <<'PY'
+import json, re, subprocess, sys
+apk = sys.argv[1]
+result = subprocess.run(["aapt", "dump", "badging", apk], capture_output=True, text=True)
+if result.returncode != 0:
+    raise SystemExit(result.returncode or 1)
+out = result.stdout
+
+def one(pattern):
+    match = re.search(pattern, out)
+    return match.group(1) if match else None
+
+print(json.dumps({
+    "package_name": one(r"package:\s+name='([^']+)'"),
+    "version_name": one(r"versionName='([^']*)'"),
+    "version_code": one(r"versionCode='([^']*)'"),
+    "min_sdk": one(r"sdkVersion:'([^']+)'"),
+    "target_sdk": one(r"targetSdkVersion:'([^']+)'"),
+    "launchable_activity": one(r"launchable-activity:\s+name='([^']+)'"),
+}))
+PY
+    then
+        rm -f "$section_file"
+        log ERROR "aapt could not read APK metadata"
+        return 1
+    fi
+
+    merge_json_section "$report_file" basic_info "$section_file"
+    rm -f "$section_file"
+}
+
+analyze_permissions() {
+    local apk_file="$1"
+    local report_file="$2"
+    local section_file
+    section_file="$(mktemp)"
+
+    if ! python3 - "$apk_file" > "$section_file" <<'PY'
+import json, re, subprocess, sys
+apk = sys.argv[1]
+result = subprocess.run(["aapt", "dump", "permissions", apk], capture_output=True, text=True)
+if result.returncode != 0:
+    raise SystemExit(result.returncode or 1)
+permissions = sorted(set(re.findall(r"uses-permission:\s+name=['\"]([^'\"]+)['\"]", result.stdout)))
+dangerous_set = {
+    "android.permission.READ_CONTACTS", "android.permission.WRITE_CONTACTS",
+    "android.permission.READ_CALENDAR", "android.permission.WRITE_CALENDAR",
+    "android.permission.CAMERA", "android.permission.ACCESS_FINE_LOCATION",
+    "android.permission.ACCESS_COARSE_LOCATION", "android.permission.RECORD_AUDIO",
+    "android.permission.READ_PHONE_STATE", "android.permission.CALL_PHONE",
+    "android.permission.READ_SMS", "android.permission.SEND_SMS", "android.permission.RECEIVE_SMS",
+}
+dangerous = [p for p in permissions if p in dangerous_set]
+print(json.dumps({
+    "total": len(permissions),
+    "dangerous_count": len(dangerous),
+    "dangerous": dangerous,
+    "all": permissions,
+    "note": "Permission sensitivity is contextual; this list is not a vulnerability verdict."
+}))
+PY
+    then
+        rm -f "$section_file"
+        log ERROR "aapt could not read APK permissions"
+        return 1
+    fi
+
+    merge_json_section "$report_file" permission_analysis "$section_file"
+    rm -f "$section_file"
+}
+
+analyze_certificates() {
+    local apk_file="$1"
+    local report_file="$2"
+    local section_file
+    section_file="$(mktemp)"
+
+    python3 - "$apk_file" > "$section_file" <<'PY'
+import json, shutil, subprocess, sys, tempfile, zipfile
+from pathlib import Path
+
+apk = Path(sys.argv[1])
+result = {"status": "not_checked", "verification": None, "certificates": [], "notes": []}
+
+apksigner = shutil.which("apksigner")
+if apksigner:
+    proc = subprocess.run([apksigner, "verify", "--verbose", "--print-certs", str(apk)], capture_output=True, text=True)
+    result["verification"] = "verified" if proc.returncode == 0 else "failed"
+    result["status"] = "checked_with_apksigner"
+    interesting = []
+    for line in (proc.stdout + "\n" + proc.stderr).splitlines():
+        stripped = line.strip()
+        if stripped.startswith("Signer #") or stripped.startswith("Verified using") or stripped.startswith("Number of signers"):
+            interesting.append(stripped)
+    result["certificates"] = interesting[:50]
+else:
+    try:
+        with zipfile.ZipFile(apk) as archive:
+            signature_files = [n for n in archive.namelist() if n.upper().startswith("META-INF/") and n.upper().endswith((".RSA", ".DSA", ".EC"))]
+            if signature_files and shutil.which("keytool"):
+                with tempfile.TemporaryDirectory(prefix="apk-cert-") as tmp:
+                    target = Path(tmp) / "signer.bin"
+                    target.write_bytes(archive.read(signature_files[0]))
+                    proc = subprocess.run(["keytool", "-printcert", "-file", str(target)], capture_output=True, text=True)
+                    result["status"] = "checked_v1_certificate"
+                    result["verification"] = "certificate_read" if proc.returncode == 0 else "certificate_unreadable"
+                    result["certificates"] = [line.strip() for line in proc.stdout.splitlines() if line.strip()][:50]
+            else:
+                result["notes"].append("No v1 certificate block was available; install apksigner to verify APK Signature Scheme v2/v3/v4 signatures.")
+    except (OSError, zipfile.BadZipFile) as exc:
+        result["notes"].append(f"Certificate inspection failed: {exc}")
+
+print(json.dumps(result))
+PY
+
+    merge_json_section "$report_file" certificate_analysis "$section_file"
+    rm -f "$section_file"
+}
+
+analyze_code_structure() {
+    local apk_file="$1"
+    local report_file="$2"
+    local section_file
+    section_file="$(mktemp)"
+
+    if ! python3 - "$apk_file" > "$section_file" <<'PY'
+import json, re, sys, zipfile
+from pathlib import Path
+apk = Path(sys.argv[1])
+with zipfile.ZipFile(apk) as archive:
+    infos = archive.infolist()
+    dex = [i for i in infos if re.search(r"(?:^|/)classes\d*\.dex$", i.filename.lower())]
+    native = [i for i in infos if i.filename.lower().endswith(".so") and "/lib/" in f"/{i.filename.lower()}"]
+    assets = [i for i in infos if i.filename.startswith("assets/") and not i.is_dir()]
+    resources = [i for i in infos if i.filename.startswith("res/") and not i.is_dir()]
+    print(json.dumps({
+        "archive_entries": len(infos),
+        "dex_files": len(dex),
+        "dex_bytes": sum(i.file_size for i in dex),
+        "native_libraries": len(native),
+        "native_library_abis": sorted({i.filename.split('/')[1] for i in native if len(i.filename.split('/')) > 2}),
+        "asset_files": len(assets),
+        "resource_files": len(resources),
+        "note": "These are measured package-structure metrics; no class/method counts are inferred without a DEX parser."
+    }))
+PY
+    then
+        rm -f "$section_file"
+        log ERROR "Unable to inspect APK archive structure"
+        return 1
+    fi
+
+    merge_json_section "$report_file" code_analysis "$section_file"
+    rm -f "$section_file"
+}
+
+set_vulnerability_summary() {
+    local report_file="$1"
+    local temp_file
+    temp_file="$(mktemp)"
+
+    if jq '
+      if .owasp_results then
+        .vulnerability_scan = {
+          engine: .owasp_results.engine,
+          status: .owasp_results.scan_status,
+          finding_count: (.owasp_results.summary.total_findings // 0),
+          review_priority_score: (.owasp_results.summary.review_priority_score // 0),
+          note: "See owasp_results.findings for evidence and confidence."
+        }
+      else
+        .vulnerability_scan = {
+          status: "not_run",
+          finding_count: 0,
+          note: "OWASP evidence scan was disabled or failed."
+        }
+      end' "$report_file" > "$temp_file"; then
+        mv "$temp_file" "$report_file"
+    else
+        rm -f "$temp_file"
+        return 1
+    fi
+}
+
+set_security_summary() {
+    local report_file="$1"
+    local temp_file
+    temp_file="$(mktemp)"
+    if jq '
+      .security_analysis = {
+        owasp_engine: (.owasp_results.engine // null),
+        owasp_findings: (.owasp_results.summary.total_findings // null),
+        static_risk_engine: (.risk_indicator_results.engine // null),
+        static_review_priority: (.risk_indicator_results.review_priority_score // null),
+        note: "See the evidence-bearing module results instead of inferred generic security claims."
+      }' "$report_file" > "$temp_file"; then
+        mv "$temp_file" "$report_file"
+    else
+        rm -f "$temp_file"
+        return 1
+    fi
+}
+
+analyze_apk() {
+    local apk_file="${1:-}"
+    if [[ -z "$apk_file" || ! -f "$apk_file" ]]; then
+        log ERROR "APK file not found: ${apk_file:-<missing>}"
+        return 1
+    fi
+    if ! unzip -tq "$apk_file" >/dev/null 2>&1; then
+        log ERROR "Input is not a readable APK/ZIP archive: $apk_file"
+        return 1
+    fi
+
+    local analysis_dir="${apk_file%.apk}_analysis"
+    local report_file="$analysis_dir/analysis_report.json"
+    mkdir -p "$analysis_dir"
+    init_analysis_report "$report_file" "$apk_file" || return 1
+
+    log INFO "Reading package metadata"
+    extract_basic_info "$apk_file" "$report_file" || return 1
+
+    if [[ "$ENABLE_CERTIFICATE_ANALYSIS" == "true" ]]; then
+        log INFO "Inspecting APK signing metadata"
+        analyze_certificates "$apk_file" "$report_file" || return 1
+    fi
+
+    if [[ "$ENABLE_PERMISSION_ANALYSIS" == "true" ]]; then
+        log INFO "Reading manifest permissions"
+        analyze_permissions "$apk_file" "$report_file" || return 1
+    fi
+
+    local module_failed=0
+    if [[ "$ENABLE_OWASP_SCAN" == "true" ]]; then
+        run_owasp_scan "$apk_file" "$report_file" || module_failed=1
+    fi
+    if [[ "$ENABLE_RISK_SCAN" == "true" ]]; then
+        run_risk_scan "$apk_file" "$report_file" || module_failed=1
+    fi
+
+    if [[ "$ENABLE_VULNERABILITY_SCAN" == "true" ]]; then
+        set_vulnerability_summary "$report_file" || module_failed=1
+    fi
+    if [[ "$ENABLE_DEEP_ANALYSIS" == "true" ]]; then
+        set_security_summary "$report_file" || module_failed=1
+    fi
+    if [[ "$ENABLE_CODE_ANALYSIS" == "true" ]]; then
+        log INFO "Measuring package code structure"
+        analyze_code_structure "$apk_file" "$report_file" || module_failed=1
+    fi
+
+    if (( module_failed != 0 )); then
+        log ERROR "One or more selected analysis modules failed. Partial report: $report_file"
+        return 1
+    fi
+
+    log SUCCESS "Analysis completed: $report_file"
+}
+
+pull_apk() {
+    local package="${1:-}"
+    if [[ -z "$package" ]]; then
+        log ERROR "Package name is required"
+        return 1
+    fi
+    if ! adb get-state >/dev/null 2>&1; then
+        log ERROR "No authorized ADB device is connected"
+        return 1
+    fi
+
+    local paths
+    paths="$(adb shell pm path "$package" 2>/dev/null | tr -d '\r' | sed -n 's/^package://p')"
+    if [[ -z "$paths" ]]; then
+        log ERROR "Package not found on connected device: $package"
+        return 1
+    fi
+
+    local count
+    count="$(printf '%s\n' "$paths" | sed '/^$/d' | wc -l | tr -d ' ')"
+    if (( count > 1 )); then
+        local output_dir="${package}_split_apks"
+        mkdir -p "$output_dir"
+        while IFS= read -r remote_path; do
+            [[ -z "$remote_path" ]] && continue
+            adb pull "$remote_path" "$output_dir/" || return 1
+        done <<< "$paths"
+        log SUCCESS "Pulled $count split APK files to $output_dir"
+        log INFO "Split APKs are preserved separately; this command does not pretend to merge them into a universal APK."
+        return 0
+    fi
+
+    local remote_path="$paths"
+    local output_name="${package}.apk"
+    adb pull "$remote_path" "$output_name" || return 1
+    log SUCCESS "Pulled APK to $output_name"
+}
+
 show_help() {
-    cat << EOF
-$TOOL_NAME v$VERSION - Enhanced Android APK Reverse Engineering Tool
+    cat <<EOF
+$TOOL_NAME v$VERSION
 
-USAGE:
-    $0 <command> [options]
+USAGE
+  $0 analyze <apk_file>
+  $0 pull <package_name>
+  $0 help
 
-COMMANDS:
-    pull <package>          Pull APK from connected device
-    analyze <apk_file>      Comprehensive APK analysis
-    interactive             Start interactive mode
-    help                    Show this help message
+COMMANDS
+  analyze   Produce an evidence-based JSON report containing package metadata,
+            signing metadata when verifiable, permissions, OWASP-aligned static
+            findings, static risk indicators, and measured package structure.
+  pull      Pull a single APK or all split APK files from an authorized ADB device.
+  help      Show this help.
 
-EXAMPLES:
-    $0 pull com.example.app
-    $0 analyze app.apk
-    $0 interactive
-
-For more detailed help, use: $0 <command> --help
-
+NOTES
+  Static analysis does not prove that an APK is safe or malicious.
+  Only inspect applications you are authorized to analyze.
 EOF
 }
 
-# Check if jq is available for JSON processing
-if ! command -v jq &> /dev/null; then
-    log "WARN" "jq not found. JSON processing features will be limited"
-fi
+main() {
+    local command_name="${1:-help}"
+    case "$command_name" in
+        analyze)
+            init_environment analyze || exit 1
+            print_banner
+            shift
+            analyze_apk "$@"
+            ;;
+        pull)
+            init_environment pull || exit 1
+            print_banner
+            shift
+            pull_apk "$@"
+            ;;
+        help|-h|--help)
+            show_help
+            ;;
+        *)
+            log ERROR "Unknown command: $command_name"
+            show_help
+            return 2
+            ;;
+    esac
+}
 
-# Run main function with all arguments
 main "$@"
