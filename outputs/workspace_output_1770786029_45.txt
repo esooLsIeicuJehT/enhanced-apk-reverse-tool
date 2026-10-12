@@ -1,6 +1,0 @@
-      retries: 3
-    networks:
-      - apk-tool-network
-    deploy:
-      resources:
-        limits:

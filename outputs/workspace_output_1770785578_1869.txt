@@ -1,3 +1,0 @@
-}
-
-# Perform security analysis

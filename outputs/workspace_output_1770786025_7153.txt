@@ -1,6 +1,0 @@
-  web-interface:
-    build:
-      context: ./web-interface
-      dockerfile: Dockerfile
-    container_name: apk-web-interface
-    ports:

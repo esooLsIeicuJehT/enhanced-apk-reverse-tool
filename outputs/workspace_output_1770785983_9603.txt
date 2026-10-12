@@ -1,6 +1,0 @@
-                    android:textSize="14sp"
-                    android:textColor="?attr/colorOnSurfaceVariant"
-                    android:text="Status" />
-
-                <TextView
-                    android:id="@+id/batteryLevelText"

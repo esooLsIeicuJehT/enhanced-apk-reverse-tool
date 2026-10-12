@@ -1,188 +1,58 @@
-version: '3.8'
-
 services:
-  # Main APK Reverse Engineering Tool
   apk-tool:
     build:
       context: .
-      dockerfile: Dockerfile.main-tool
-    container_name: apk-reverse-tool
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./uploads:/workspace/uploads
-      - ./analyses:/workspace/analyses
-      - ./output:/output/output
-      - ./temp:/workspace/temp
-    environment:
-      - FLASK_ENV=production
-      - FLASK_DEBUG=0
-      - API_HOST=0.0.0.0
-      - API_PORT=8080
-      - MAX_UPLOAD_SIZE=1073741824
-      - MAX_ANALYSIS_TIME=3600
-      - LOG_LEVEL=INFO
-      - WORKERS=4
+      dockerfile: Dockerfile
     restart: unless-stopped
+    environment:
+      APP_ENV: production
+      API_HOST: 0.0.0.0
+      API_PORT: 8080
+      DATA_DIR: /data
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in your environment or .env}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?set JWT_SECRET_KEY in your environment or .env}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+      MAX_UPLOAD_SIZE: ${MAX_UPLOAD_SIZE:-536870912}
+      MAX_ANALYSIS_TIME: ${MAX_ANALYSIS_TIME:-3600}
+      MAX_QUEUE_SIZE: ${MAX_QUEUE_SIZE:-16}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      - apk-data:/data
+    ports:
+      - "127.0.0.1:8080:8080"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/api/health"]
       interval: 30s
-      timeout: 10s
+      timeout: 5s
       retries: 3
-      start_period: 40s
+      start_period: 20s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       - apk-tool-network
-    deploy:
-      resources:
-        limits:
-          cpus: '2.0'
-          memory: 4G
-        reservations:
-          cpus: '0.5'
-          memory: 1G
 
-  # Web Interface (PWA)
   web-interface:
     build:
       context: ./web-interface
       dockerfile: Dockerfile
-    container_name: apk-web-interface
-    ports:
-      - "3000:80"
-    environment:
-      - REACT_APP_API_URL=http://apk-tool:8080
-      - REACT_APP_WEBSOCKET_URL=ws://apk-tool:8080
+    restart: unless-stopped
     depends_on:
-      - apk-tool
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    networks:
-      - apk-tool-network
-
-  # Redis for caching
-  redis:
-    image: redis:7-alpine
-    container_name: apk-redis
+      apk-tool:
+        condition: service_healthy
     ports:
-      - "6379:6379"
-    volumes:
-      - redis-data:/data
-    command: redis-server --appendonly yes
-    restart: unless-stopped
+      - "3000:8080"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8080/health"]
       interval: 30s
-      timeout: 10s
-      retries: 3
-    networks:
-      - apk-tool-network
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-        reservations:
-          cpus: '0.1'
-          memory: 128M
-
-  # PostgreSQL for analysis results
-  postgres:
-    image: postgres:15-alpine
-    container_name: apk-postgres
-    ports:
-      - "5432:5432"
-    environment:
-      - POSTGRES_USER=apktool
-      - POSTGRES_PASSWORD=apktool123
-      - POSTGRES_DB=apktool_db
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U apktool"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    networks:
-      - apk-tool-network
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1G
-        reservations:
-          cpus: '0.25'
-          memory: 256M
-
-  # Nginx reverse proxy
-  nginx:
-    image: nginx:alpine
-    container_name: apk-nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro
-    depends_on:
-      - apk-tool
-      - web-interface
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/health"]
-      interval: 30s
-      timeout: 10s
+      timeout: 5s
       retries: 3
       start_period: 10s
-    networks:
-      - apk-tool-network
-
-  # Monitoring with Prometheus
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: apk-prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus-data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--web.enable-lifecycle'
-    restart: unless:stopped
-    networks:
-      - apk-tool-network
-
-  # Grafana for visualization
-  grafana:
-    image: grafana/grafana:latest
-    container_name: apk-grafana
-    ports:
-      - "3001:3000"
-    volumes:
-      - grafana-data:/var/lib/grafana
-      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
-      - ./grafana/provisioning:/etc/grafana/provisioning:ro
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_SERVER_ROOT_URL=http://localhost:3001
-    depends_on:
-      - prometheus
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "-q", "-S", "-O", "/dev/null", "http://localhost:3000/api/health"]
-      interval: 30s
-      timeout: 10s
-     retries: 3
-      start_period: 40s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       - apk-tool-network
 
@@ -191,7 +61,4 @@ networks:
     driver: bridge
 
 volumes:
-  redis-data:
-  postgres-data:
-  prometheus-data:
-  grafana-data:
+  apk-data:
